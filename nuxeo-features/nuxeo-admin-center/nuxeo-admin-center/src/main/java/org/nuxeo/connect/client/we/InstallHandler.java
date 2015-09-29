@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2014 Nuxeo SA (http://nuxeo.com/) and contributors.
+ * (C) Copyright 2006-2015 Nuxeo SA (http://nuxeo.com/) and contributors.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser General Public License
@@ -97,8 +97,10 @@ public class InstallHandler extends DefaultObject {
             PackageUpdateService pus = Framework.getLocalService(PackageUpdateService.class);
             LocalPackage pkg = pus.getPackage(pkgId);
             String content = pkg.getTermsAndConditionsContent();
-            return getView("termsAndConditions").arg("pkg", pkg).arg("source", source).arg("content", content).arg(
-                    "depCheck", depCheck);
+            return getView("termsAndConditions").arg("pkg", pkg)
+                                                .arg("source", source)
+                                                .arg("content", content)
+                                                .arg("depCheck", depCheck);
         } catch (PackageException e) {
             log.error("Error during terms and conditions phase ", e);
             return getView("installError").arg("e", e).arg("source", source);
@@ -161,8 +163,11 @@ public class InstallHandler extends DefaultObject {
             if (forms != null && forms.length > 0) {
                 needWizard = true;
             }
-            return getView("startInstall").arg("status", status).arg("needWizard", needWizard).arg("installTask",
-                    installTask).arg("pkg", pkg).arg("source", source);
+            return getView("startInstall").arg("status", status)
+                                          .arg("needWizard", needWizard)
+                                          .arg("installTask", installTask)
+                                          .arg("pkg", pkg)
+                                          .arg("source", source);
         } catch (PackageException e) {
             log.error("Error during first step of installation", e);
             return getView("installError").arg("e", e).arg("source", source);
@@ -181,11 +186,14 @@ public class InstallHandler extends DefaultObject {
             Form[] forms = installTask.getPackage().getInstallForms();
             if (forms == null || forms.length < formId - 1) {
                 return getView("installError").arg("e",
-                        new NuxeoException("No form with Id " + formId + " for package " + pkgId)).arg("source",
-                        source);
+                        new NuxeoException("No form with Id " + formId + " for package " + pkgId))
+                                              .arg("source", source);
             }
-            return getView("showInstallForm").arg("form", forms[formId]).arg("pkg", pkg).arg("source", source).arg(
-                    "step", formId + 1).arg("steps", forms.length);
+            return getView("showInstallForm").arg("form", forms[formId])
+                                             .arg("pkg", pkg)
+                                             .arg("source", source)
+                                             .arg("step", formId + 1)
+                                             .arg("steps", forms.length);
         } catch (PackageException e) {
             log.error("Error during displaying Form nb " + formId, e);
             return getView("installError").arg("e", e).arg("source", source);
@@ -204,8 +212,8 @@ public class InstallHandler extends DefaultObject {
             Form[] forms = installTask.getPackage().getInstallForms();
             if (forms == null || forms.length < formId - 1) {
                 return getView("installError").arg("e",
-                        new NuxeoException("No form with Id " + formId + " for package " + pkgId)).arg("source",
-                        source);
+                        new NuxeoException("No form with Id " + formId + " for package " + pkgId))
+                                              .arg("source", source);
             }
 
             Form form = forms[formId];
@@ -238,8 +246,8 @@ public class InstallHandler extends DefaultObject {
             @QueryParam("confirm") Boolean confirm) {
         if (!RequestHelper.isInternalLink(getContext())) {
             return getView("installError").arg("e",
-                    new NuxeoException("Installation seems to have been started from an external link.")).arg(
-                    "source", source);
+                    new NuxeoException("Installation seems to have been started from an external link.")).arg("source",
+                    source);
         }
         PackageManager pm = Framework.getLocalService(PackageManager.class);
         PackageUpdateService pus = Framework.getLocalService(PackageUpdateService.class);
@@ -252,8 +260,8 @@ public class InstallHandler extends DefaultObject {
             List<String> downloadPackagesIds = resolution.getDownloadPackageIds();
             if (downloadPackagesIds.size() > 0) {
                 return getView("installError").arg("e",
-                        new NuxeoException("Some packages need to be downloaded before running bulk installation")).arg(
-                        "source", source);
+                        new NuxeoException("Some packages need to be downloaded before running bulk installation"))
+                                              .arg("source", source);
             }
 
             List<String> pkgIds = resolution.getOrderedPackageIdsToInstall();
@@ -270,8 +278,8 @@ public class InstallHandler extends DefaultObject {
             for (String id : pkgIds) {
                 Package pkg = pus.getPackage(id);
                 if (pkg == null) {
-                    return getView("installError").arg("e", new NuxeoException("Unable to find local package " + id)).arg(
-                            "source", source);
+                    return getView("installError").arg("e", new NuxeoException("Unable to find local package " + id))
+                                                  .arg("source", source);
                 }
                 String targetPlatform = PlatformVersionHelper.getPlatformFilter();
                 if (!TargetPlatformFilterHelper.isCompatibleWithTargetPlatform(pkg, targetPlatform)) {
@@ -286,11 +294,16 @@ public class InstallHandler extends DefaultObject {
                 for (String id : pkgIds) {
                     InstallAfterRestart.addPackageForInstallation(id);
                 }
-                return getView("bulkInstallOnRestart").arg("pkgIds", pkgIds).arg("rmPkgIds", rmPkgIds).arg("source",
-                        source);
+                return getView("bulkInstallOnRestart").arg("pkgIds", pkgIds)
+                                                      .arg("rmPkgIds", rmPkgIds)
+                                                      .arg("source", source);
             } else {
-                return getView("bulkInstallOnRestartConfirm").arg("pkgIds", pkgIds).arg("rmPkgIds", rmPkgIds).arg(
-                        "warns", warns).arg("descs", descs).arg("source", source).arg("pkgId", pkgId);
+                return getView("bulkInstallOnRestartConfirm").arg("pkgIds", pkgIds)
+                                                             .arg("rmPkgIds", rmPkgIds)
+                                                             .arg("warns", warns)
+                                                             .arg("descs", descs)
+                                                             .arg("source", source)
+                                                             .arg("pkgId", pkgId);
             }
         } catch (PackageException e) {
             log.error("Error during installation of " + pkgId, e);
@@ -304,8 +317,8 @@ public class InstallHandler extends DefaultObject {
     public Object doInstall(@PathParam("pkgId") String pkgId, @QueryParam("source") String source) {
         if (!RequestHelper.isInternalLink(getContext())) {
             return getView("installError").arg("e",
-                    new NuxeoException("Installation seems to have been started from an external link.")).arg(
-                    "source", source);
+                    new NuxeoException("Installation seems to have been started from an external link.")).arg("source",
+                    source);
         }
         PackageUpdateService pus = Framework.getLocalService(PackageUpdateService.class);
         try {
