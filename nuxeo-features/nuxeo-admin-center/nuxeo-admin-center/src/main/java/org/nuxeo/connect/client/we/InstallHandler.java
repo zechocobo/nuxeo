@@ -32,8 +32,10 @@ import javax.ws.rs.QueryParam;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.nuxeo.connect.client.vindoz.InstallAfterRestart;
 import org.nuxeo.connect.packages.PackageManager;
+import org.nuxeo.connect.packages.dependencies.CUDFHelper;
 import org.nuxeo.connect.packages.dependencies.DependencyResolution;
 import org.nuxeo.connect.packages.dependencies.TargetPlatformFilterHelper;
 import org.nuxeo.connect.update.LocalPackage;
@@ -122,35 +124,29 @@ public class InstallHandler extends DefaultObject {
             if (pkg.requireTermsAndConditionsAcceptance() && !Boolean.TRUE.equals(acceptedTAC)) {
                 return showTermsAndConditions(pkgId, source, depCheck);
             }
-            if (!Boolean.FALSE.equals(depCheck)) {
-                // check deps requirements
-                if (pkg.getDependencies() != null && pkg.getDependencies().length > 0) {
-                    PackageManager pm = Framework.getLocalService(PackageManager.class);
-                    DependencyResolution resolution = pm.resolveDependencies(pkgId,
-                            PlatformVersionHelper.getPlatformFilter());
-                    if (resolution.isFailed() && PlatformVersionHelper.getPlatformFilter() != null) {
-                        // retry without PF filter ...
-                        resolution = pm.resolveDependencies(pkgId, null);
-                    }
-                    if (resolution.isFailed()) {
-                        return getView("dependencyError").arg("resolution", resolution).arg("pkg", pkg).arg("source",
-                                source);
-                    } else {
-                        if (resolution.requireChanges()) {
-                            if (autoMode == null) {
-                                autoMode = true;
-                            }
-                            return getView("displayDependencies").arg("resolution", resolution).arg("pkg", pkg).arg(
-                                    "source", source).arg("autoMode", autoMode);
-                        }
-                        // no dep changes => can continue standard install
-                        // process
-                    }
+            String targetPlatform = PlatformVersionHelper.getPlatformFilter();
+            if (!Boolean.FALSE.equals(depCheck)) { // check dependency requirements
+                CUDFHelper.defaultAllowSNAPSHOT = new Version(PlatformVersionHelper.getDistributionVersion()).isSnapshot();
+                PackageManager pm = Framework.getLocalService(PackageManager.class);
+                DependencyResolution resolution = pm.resolveDependencies(pkgId, targetPlatform);
+                if (resolution.isFailed() && targetPlatform != null) {
+                    // retry without PF filter ...
+                    resolution = pm.resolveDependencies(pkgId, null);
                 }
+                if (resolution.isFailed()) {
+                    return getView("dependencyError").arg("resolution", resolution)
+                                                     .arg("pkg", pkg)
+                                                     .arg("source", source);
+                } else if (resolution.requireChanges()) {
+                    return getView("displayDependencies").arg("resolution", resolution)
+                                                         .arg("pkg", pkg)
+                                                         .arg("source", source)
+                                                         .arg("autoMode", !Boolean.FALSE.equals(autoMode));
+                }
+                // no dep changes => can continue standard install process
             }
             Task installTask = pkg.getInstallTask();
             ValidationStatus status = installTask.validate();
-            String targetPlatform = PlatformVersionHelper.getPlatformFilter();
             if (!TargetPlatformFilterHelper.isCompatibleWithTargetPlatform(pkg, targetPlatform)) {
                 status.addWarning("This package is not validated for you current platform: " + targetPlatform);
             }

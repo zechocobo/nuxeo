@@ -188,15 +188,6 @@ $(document).ready(function() {
         </#list>
       </table>
       </#if>
-
-      <#if (resolution.getUnchangedPackageIds()?size>0) >
-      <h3>${Context.getMessage('label.displayDependencies.titles.alreadyinstalled')}</h3>
-      <table>
-        <#list resolution.getUnchangedPackageIds() as pkgId>
-          <tr><td> ${pkgId}</td></tr>
-        </#list>
-      </table>
-      </#if>
    </div>
 
    <br/>

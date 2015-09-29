@@ -17,6 +17,7 @@
  */
 package org.nuxeo.ecm.admin.runtime;
 
+import org.nuxeo.common.Environment;
 import org.nuxeo.connect.connector.fake.FakeDownloadablePackage;
 import org.nuxeo.connect.packages.dependencies.TargetPlatformFilterHelper;
 import org.nuxeo.connect.update.Version;
@@ -42,11 +43,11 @@ public class PlatformVersionHelper {
     }
 
     public static String getDistributionName() {
-        return Framework.getProperty("org.nuxeo.distribution.name", UNKNOWN);
+        return Framework.getProperty(Environment.DISTRIBUTION_NAME, UNKNOWN);
     }
 
     public static String getDistributionVersion() {
-        return Framework.getProperty("org.nuxeo.distribution.version", UNKNOWN);
+        return Framework.getProperty(Environment.DISTRIBUTION_VERSION, UNKNOWN);
     }
 
     public static String getDistributionDate() {
