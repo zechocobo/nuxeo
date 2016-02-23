@@ -45,7 +45,7 @@ object Parameters {
     FiniteDuration(ramp, "second")
   }
 
-  def getNbNodes(default: Integer = 100000): Integer = {
+  def getNbNodes(default: Integer = 1000000): Integer = {
     Integer.getInteger("nbNodes", default)
   }
 
