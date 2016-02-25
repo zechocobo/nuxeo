@@ -59,6 +59,9 @@ public class SQLFulltextExtractorWork extends FulltextExtractorWork {
                 log.error(e);
             }
         }
+        if (fulltextConfiguration.fulltextSearchDisabled) {
+            useUpdaterWork = false;
+        }
     }
 
 }

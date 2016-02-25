@@ -68,6 +68,8 @@ public abstract class FulltextExtractorWork extends AbstractWork {
 
     protected transient FulltextParser fulltextParser;
 
+    protected transient boolean useUpdaterWork = true;
+
     public FulltextExtractorWork(String repositoryName, String docId, String id, boolean excludeProxies) {
         super(id);
         setDocument(repositoryName, docId);
@@ -153,9 +155,15 @@ public abstract class FulltextExtractorWork extends AbstractWork {
         }
         if (!indexesAndText.isEmpty()) {
             Work work = new FulltextUpdaterWork(repositoryName, docId, false, true, indexesAndText);
-            WorkManager workManager = Framework.getLocalService(WorkManager.class);
-            workManager.schedule(work, true);
+            if (useUpdaterWork) {
+                WorkManager workManager = Framework.getLocalService(WorkManager.class);
+                workManager.schedule(work, true);
+            } else {
+                ((FulltextUpdaterWork)work).updateWithSession(session);
+                session.save();
+            }
         }
+
     }
 
     @Override
