@@ -46,6 +46,7 @@ public class DBSFulltextExtractorWork extends FulltextExtractorWork {
         DBSRepository repository = (DBSRepository) repositoryService.getRepository(repositoryName);
         fulltextConfiguration = repository.getFulltextConfiguration();
         fulltextParser = new DefaultFulltextParser();
+        useUpdaterWork = false;
     }
 
 }

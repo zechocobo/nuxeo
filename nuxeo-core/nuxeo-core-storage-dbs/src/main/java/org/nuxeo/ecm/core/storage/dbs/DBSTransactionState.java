@@ -754,7 +754,9 @@ public class DBSTransactionState {
             return Collections.emptyList();
         }
         List<Work> works = new LinkedList<Work>();
-        getFulltextSimpleWorks(works, docsWithDirtyStrings);
+        // When relying on ES we don't need to extract simple fulltext
+        // TODO: use a config like in SQL searchDisable to deactivate simple fulltext extraction
+        // getFulltextSimpleWorks(works, docsWithDirtyStrings);
         getFulltextBinariesWorks(works, docsWithDirtyBinaries);
         return works;
     }
