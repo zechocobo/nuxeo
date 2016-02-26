@@ -68,7 +68,7 @@ public abstract class FulltextExtractorWork extends AbstractWork {
 
     protected transient FulltextParser fulltextParser;
 
-    protected transient boolean useUpdaterWork = true;
+    protected boolean useUpdaterWork = true;
 
     public FulltextExtractorWork(String repositoryName, String docId, String id, boolean excludeProxies) {
         super(id);
