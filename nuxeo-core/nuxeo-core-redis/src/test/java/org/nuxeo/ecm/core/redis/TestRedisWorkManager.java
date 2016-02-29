@@ -20,8 +20,14 @@ package org.nuxeo.ecm.core.redis;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.nuxeo.ecm.core.work.SleepWork;
 import org.nuxeo.ecm.core.work.WorkManagerTest;
 import org.nuxeo.runtime.api.Framework;
+
+import static org.junit.Assert.assertEquals;
+import static org.nuxeo.ecm.core.work.api.Work.State.COMPLETED;
+import static org.nuxeo.ecm.core.work.api.Work.State.RUNNING;
+import static org.nuxeo.ecm.core.work.api.Work.State.SCHEDULED;
 
 /**
  * Test of the WorkManager using Redis. Does not run if no Redis is configured through the properties of
@@ -65,6 +71,30 @@ public class TestRedisWorkManager extends WorkManagerTest {
         } finally {
             stopMonitorRedis();
         }
+    }
+
+    @Test
+    public void testNXP1902() throws Exception {
+            deployAndStart();
+            int duration = 1000; // ms
+            SleepWork work = new SleepWork(duration, false);
+            service.schedule(work);
+            Thread.sleep(duration/2);
+            assertEquals(0, service.getQueueSize(QUEUE, COMPLETED));
+            assertEquals(1, service.getQueueSize(QUEUE, RUNNING));
+            Thread.sleep(2*duration);
+            assertEquals(1, service.getQueueSize(QUEUE, COMPLETED));
+
+            service.schedule(work);
+        Thread.sleep(duration/2);
+        assertEquals(1, service.getQueueSize(QUEUE, COMPLETED));
+        assertEquals(1, service.getQueueSize(QUEUE, RUNNING));
+        Thread.sleep(2*duration);
+        Thread.sleep(100000);
+        assertEquals(2, service.getQueueSize(QUEUE, COMPLETED));
+            //service.schedule(work);
+            //Thread.sleep(100000);
+
     }
 
     private void stopMonitorRedis() {

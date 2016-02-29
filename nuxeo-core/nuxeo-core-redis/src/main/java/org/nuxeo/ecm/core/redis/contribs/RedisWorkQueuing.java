@@ -835,6 +835,9 @@ public class RedisWorkQueuing implements WorkQueuing {
                 }
                 // get data
                 byte[] workBytes = jedis.hget(dataKey(), workIdBytes);
+                if (workBytes == null) {
+                    log.error("XXX Get an empty job on queue:" + queueId + " for key: " + workIdBytes.toString());
+                }
                 return deserializeWork(workBytes);
             }
 
@@ -853,6 +856,7 @@ public class RedisWorkQueuing implements WorkQueuing {
             @Override
             public Work call(Jedis jedis) {
                 // remove from queue
+                log.error("XXX removeSchedule queue:" + queueId + " work:" + workId);
                 Long n = jedis.lrem(queuedKey(queueId), 0, workIdBytes);
                 if (n == null || n.intValue() == 0) {
                     return null;
@@ -866,6 +870,7 @@ public class RedisWorkQueuing implements WorkQueuing {
                 byte[] workBytes = jedis.hget(dataKey(), workIdBytes);
                 Work work = deserializeWork(workBytes);
                 log.debug("Remove scheduled " + work);
+                log.error("XXX Remove scheduled " + work);
                 return work;
             }
 
