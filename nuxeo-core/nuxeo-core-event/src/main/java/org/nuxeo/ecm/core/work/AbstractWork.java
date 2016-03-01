@@ -332,6 +332,7 @@ public abstract class AbstractWork implements Work {
         int retryCount = getRetryCount(); // may be 0
         for (int i = 0; i <= retryCount; i++) {
             if (i > 0) {
+                log.error("XXX retry work (" + i + "): " + this);
                 log.debug("Retrying work due to concurrent update (" + i + "): " + this);
                 log.trace("Concurrent update", suppressed);
             }

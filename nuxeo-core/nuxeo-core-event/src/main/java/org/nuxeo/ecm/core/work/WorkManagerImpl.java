@@ -556,11 +556,6 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
         @Override
         protected void beforeExecute(Thread t, Runnable r) {
             Work work = WorkHolder.getWork(r);
-            if (started == false || shutdownInProgress == true) {
-                work.setWorkInstanceState(State.SCHEDULED);
-                queuing.workSchedule(queueId, work);
-                return;
-            }
             work.setWorkInstanceState(State.RUNNING);
             queuing.workRunning(queueId, work);
             running.add(work);
@@ -569,15 +564,21 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
 
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
-            Work work = WorkHolder.getWork(r);
+            if (t != null) {
+            }
+            Work work= null;
             try {
-                if (work.isSuspending()) {
-                    return;
+                work = WorkHolder.getWork(r);
+                if (work.isSuspending() || t != null) {
+                    work.setWorkInstanceState(State.FAILED);
+                } else {
+                    work.setWorkInstanceState(State.COMPLETED);
                 }
-                work.setWorkInstanceState(t == null ? State.COMPLETED : State.FAILED);
                 queuing.workCompleted(queueId, work);
             } finally {
-                // metrics
+                if (work == null) {
+                    log.error("XXX after execute with null worker: " + r);
+                }
                 running.remove(work);
                 runningCount.dec();
                 completedCount.inc();
