@@ -547,6 +547,7 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
         protected void submit(Work work) throws RuntimeException {
             boolean added = queuing.workSchedule(queueId, work);
             if (!added) {
+                log.error("XXX removing scheduled job:" + work);
                 queuing.removeScheduled(queueId, work.getId());
                 throw new RuntimeException("queue should have blocked");
             }
@@ -565,6 +566,7 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
             if (t != null) {
+                log.error("XXX worker throw error:", t);
             }
             Work work= null;
             try {
@@ -682,6 +684,7 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
             case CANCEL_SCHEDULED:
                 Work w = getExecutor(queueId).removeScheduled(workId);
                 if (w != null) {
+                    log.error("XXX canceling work:" + w);
                     w.setWorkInstanceState(State.CANCELED);
                     if (log.isDebugEnabled()) {
                         log.debug("Canceling existing scheduled work before scheduling");

@@ -370,6 +370,7 @@ public class RedisWorkQueuing implements WorkQueuing {
 
     @Override
     public void clearCompletedWork(String queueId, long completionTime) {
+        /*
         try {
             if (completionTime <= 0) {
                 removeAllCompletedWork(queueId);
@@ -379,6 +380,7 @@ public class RedisWorkQueuing implements WorkQueuing {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        */
     }
 
     /*
@@ -931,7 +933,7 @@ public class RedisWorkQueuing implements WorkQueuing {
     private static final int BATCH_SIZE = 5000;
 
     protected void removeAllCompletedWork(final String queueId) throws IOException {
-        removeCompletedWork(queueId, 0);
+        // removeCompletedWork(queueId, 0);
     }
 
     protected void removeCompletedWork(final String queueId, final long completionTime) throws IOException {
@@ -955,7 +957,6 @@ public class RedisWorkQueuing implements WorkQueuing {
                         List<String> args = new ArrayList<String>(1 + workIds.size());
                         args.add(String.valueOf(completionTime));
                         args.addAll(workIds);
-                        log.warn("XXX clean " + workIds.size() + " completed: " + Arrays.toString(workIds.toArray()));
                         jedis.evalsha(delCompletedSha, keys, args);
                     }
                 } while (!"0".equals(cursor));
