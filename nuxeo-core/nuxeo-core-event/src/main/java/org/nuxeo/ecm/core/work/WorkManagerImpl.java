@@ -577,15 +577,14 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
                     work.setWorkInstanceState(State.COMPLETED);
                 }
                 queuing.workCompleted(queueId, work);
+            } catch (Throwable throwable) {
+                log.error("XXX fail to update work " + r, throwable);
             } finally {
-                if (work == null) {
-                    log.error("XXX after execute with null worker: " + r);
-                }
                 running.remove(work);
-                runningCount.dec();
                 completedCount.inc();
                 workTimer.update(work.getCompletionTime() - work.getStartTime(), TimeUnit.MILLISECONDS);
                 completionSynchronizer.signalCompletedWork();
+                runningCount.dec();
             }
         }
 
