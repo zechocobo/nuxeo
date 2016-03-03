@@ -78,7 +78,9 @@ public class RedisServerDescriptor extends RedisPoolDescriptor {
         conf.setMaxIdle(maxIdle);
         RedisExecutor base = new RedisPoolExecutor(new JedisPool(conf, host, port, timeout,
                 StringUtils.defaultIfBlank(password, null), database));
-        return new RedisFailoverExecutor(failoverTimeout, base);
+        return base;
+        // XXX disable retry
+        // return new RedisFailoverExecutor(failoverTimeout, base);
     }
 
 }
