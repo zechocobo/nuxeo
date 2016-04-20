@@ -93,6 +93,11 @@
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
+            <configuration>
+              <systemPropertyVariables>
+              	<nuxeo.log.webriver>true</nuxeo.log.webriver>
+              </systemPropertyVariables>
+            </configuration>
           </execution>
         </executions>
       </plugin>
