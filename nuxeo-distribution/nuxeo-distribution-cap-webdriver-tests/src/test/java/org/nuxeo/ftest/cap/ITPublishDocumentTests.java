@@ -623,7 +623,7 @@ public class ITPublishDocumentTests extends AbstractTest {
     }
 
     @Test
-    public void testMultipleVersionsPublicationsByApproval() throws IOException, UserNotConnectedException {
+    public void testMultipleVersionsPublicationsByApproval() throws IOException, UserNotConnectedException, InterruptedException {
         // create file to be versionned and published
         login(MANAGER_USERNAME, MANAGER_USERNAME);
         open(TEST_FOLDER_URL);
@@ -631,6 +631,9 @@ public class ITPublishDocumentTests extends AbstractTest {
 
         // publish note as manager
         asPage(DocumentBasePage.class).getPublishTab().publish("Local Sections (Domain)", "None", TEST_SECTION_TITLE);
+
+        //NXP-19709 : wait to avoid bad version ordering
+        Thread.sleep(1000);
 
         // edit note
         asPage(DocumentBasePage.class).getEditTab().edit(TEST_NOTE_TITLE, "second version of the note",
@@ -720,7 +723,7 @@ public class ITPublishDocumentTests extends AbstractTest {
     }
 
     @Test
-    public void testMultipleVersionsPublicationsByPublishOver() throws IOException, UserNotConnectedException {
+    public void testMultipleVersionsPublicationsByPublishOver() throws IOException, UserNotConnectedException, InterruptedException {
         // create file to be versionned and published
         login(MANAGER_USERNAME, MANAGER_USERNAME);
         open(TEST_FOLDER_URL);
@@ -728,6 +731,9 @@ public class ITPublishDocumentTests extends AbstractTest {
 
         // publish note as manager
         asPage(DocumentBasePage.class).getPublishTab().publish("Local Sections (Domain)", "None", TEST_SECTION_TITLE);
+
+        //NXP-19709 : wait to avoid bad version ordering
+        Thread.sleep(1000);
 
         // edit note
         asPage(DocumentBasePage.class).getEditTab().edit(TEST_NOTE_TITLE, "second version of the note",
