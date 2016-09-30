@@ -107,9 +107,10 @@ public class DirectoryRegistry {
         List<BaseDirectoryDescriptor> list = allDescriptors.getOrDefault(id, Collections.emptyList());
         BaseDirectoryDescriptor contrib = null;
         for (BaseDirectoryDescriptor next : list) {
-            if (next.extendz != null) {
+            String extendz = next.extendz;
+            if (extendz != null) {
                 // merge from base
-                BaseDirectoryDescriptor base = descriptors.get(next.extendz);
+                BaseDirectoryDescriptor base = descriptors.get(extendz);
                 if (base != null && base.template) {
                     // merge generic base descriptor into specific one from the template
                     contrib = base.clone();
@@ -117,13 +118,17 @@ public class DirectoryRegistry {
                     contrib.name = next.name;
                     contrib.merge(next);
                 } else {
-                    log.debug("Directory " + id + " extends non-existing directory template: " + next.extendz);
+                    log.debug("Directory " + id + " extends non-existing directory template: " + extendz);
                     contrib = null;
                 }
-                // record template link
+                // record template link, with transitive templates
                 // we only add things to this, never remove (except for shutdown)
                 // but this is ok as the goal is to do invalidations, and doing a few more is harmless
-                descriptorsForTemplates.computeIfAbsent(next.extendz, k -> new HashSet<>()).add(id);
+                do {
+                    descriptorsForTemplates.computeIfAbsent(extendz, k -> new HashSet<>()).add(id);
+                    base = descriptors.get(extendz);
+                    extendz = base == null ? null : base.extendz;
+                } while (extendz != null);
             } else if (next.remove) {
                 contrib = null;
             } else if (contrib == null) {

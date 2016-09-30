@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.directory.repository.config.user">
+
+  <extension target="org.nuxeo.ecm.directory.core.CoreDirectoryFactory"
+    point="directories">
+
+    <directory name="userCoreDirectory">
+      <schema>schema1</schema>
+      <docType>CoreDirDoc</docType>
+      <idField>uid</idField>
+      <passwordField>bar</passwordField>
+      <directoriesPath>/directories</directoriesPath>
+      <directoriesType>HiddenFolder</directoriesType>
+      <directoryType>Folder</directoryType>
+      <references>
+        <coreDirectoryReference field="groups" directory="groupCoreDirectory"
+          targetField="groupId" />
+      </references>
+    </directory>
+
+    <directory name="groupCoreDirectory">
+      <schema>schema1</schema>
+      <docType>OtherDirDoc</docType>
+      <directoriesPath>/directories</directoriesPath>
+      <directoriesType>HiddenFolder</directoriesType>
+      <directoryType>Folder</directoryType>
+      <references>
+        <inverseReference field="members" directory="userCoreDirectory"
+          dualReferenceField="groups" />
+        <coreDirectoryReference field="subGroups" directory="groupCoreDirectory"
+          targetField="parentGroupId" />
+        <inverseReference field="parentGroups"
+          directory="groupCoreDirectory" dualReferenceField="subGroups" />
+      </references>
+    </directory>
+
+  </extension>
+
+</component>

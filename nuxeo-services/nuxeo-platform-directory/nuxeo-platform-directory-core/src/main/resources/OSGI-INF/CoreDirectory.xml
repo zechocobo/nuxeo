@@ -10,7 +10,6 @@
 
   <extension-point name="directories">
     <object class="org.nuxeo.ecm.directory.core.CoreDirectoryDescriptor" />
-    <object class="org.nuxeo.ecm.directory.core.CoreDirectoryDescriptor$ACLDescriptor" />
 
     <documentation>
       This extension point can be used to register new
@@ -22,8 +21,6 @@
           <idField>username</idField>
           <passwordField>password</passwordField>
           <readOnly>false</readOnly>
-          <references>
-          </references>
         </directory>
 
       </code>
