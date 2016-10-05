@@ -42,8 +42,13 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 
 @RunWith(FeaturesRunner.class)
 @Features({ LogCaptureFeature.class, CoreFeature.class })
-@Deploy({ "org.nuxeo.ecm.core.schema", "org.nuxeo.ecm.core.api", "org.nuxeo.ecm.core", "org.nuxeo.ecm.directory",
-        "org.nuxeo.ecm.directory.sql" })
+@Deploy({ "org.nuxeo.ecm.core.schema", //
+        "org.nuxeo.ecm.core.api", //
+        "org.nuxeo.ecm.core", //
+        "org.nuxeo.ecm.directory", //
+        "org.nuxeo.ecm.directory.sql", //
+        "org.nuxeo.ecm.directory.types.contrib", //
+        })
 @LocalDeploy({ "org.nuxeo.ecm.directory:test-sql-directories-schema-override.xml",
         "org.nuxeo.ecm.directory.sql:test-sql-directories-bundle.xml" })
 @LogCaptureFeature.FilterWith(TestSessionsAreClosedAutomatically.CloseSessionFilter.class)

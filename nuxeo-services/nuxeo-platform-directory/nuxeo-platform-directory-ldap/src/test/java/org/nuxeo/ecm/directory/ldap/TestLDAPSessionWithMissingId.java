@@ -65,6 +65,9 @@ public class TestLDAPSessionWithMissingId extends LDAPDirectoryTestCase {
             runtimeHarness.deployContrib("org.nuxeo.ecm.directory.ldap.tests", INTERNAL_SERVER_SETUP_OVERRIDE);
             getLDAPDirectory("userDirectory").setTestServer(server);
             getLDAPDirectory("groupDirectory").setTestServer(server);
+            // inits usually done by fireFrameworkStarted
+            getLDAPDirectory("userDirectory").initialize();
+            getLDAPDirectory("groupDirectory").initialize();
         }
     }
 

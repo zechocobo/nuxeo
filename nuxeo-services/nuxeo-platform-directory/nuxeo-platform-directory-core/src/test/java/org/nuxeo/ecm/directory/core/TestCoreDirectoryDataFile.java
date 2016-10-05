@@ -28,7 +28,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.directory.Directory;
@@ -38,6 +37,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
+import org.nuxeo.runtime.test.runner.RuntimeFeature;
+import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 @RunWith(FeaturesRunner.class)
 @Features(CoreFeature.class)
@@ -50,21 +51,17 @@ import org.nuxeo.runtime.test.runner.LocalDeploy;
         "org.nuxeo.ecm.directory.core.tests:core/directory-data-config.xml" })
 public class TestCoreDirectoryDataFile {
 
-    public static final String ROOT_FOLDER_NAME = "rootFolder";
+    @Inject
+    protected RuntimeHarness harness;
 
     @Inject
     protected DirectoryService directoryService;
 
-    @Inject
-    protected CoreSession coreSession;
-
     protected Session session;
 
     @Before
-    public void setUp() {
-        DocumentModel doc = coreSession.createDocumentModel("/", ROOT_FOLDER_NAME, "Folder");
-        doc = coreSession.createDocument(doc);
-        coreSession.save();
+    public void setUp() throws Exception {
+        harness.fireFrameworkStarted();
         Directory dir = directoryService.getDirectory("coreDirWithData");
         session = dir.getSession();
     }

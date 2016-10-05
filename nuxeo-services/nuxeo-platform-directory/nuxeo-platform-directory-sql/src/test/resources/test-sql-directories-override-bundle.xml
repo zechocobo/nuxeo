@@ -17,13 +17,10 @@
       <types>
         <type>system</type>
       </types>
-      <createTablePolicy>never</createTablePolicy>
+      <createTablePolicy>always</createTablePolicy>
       <querySizeLimit>123</querySizeLimit>
       <autoincrementIdField>true</autoincrementIdField>
       <computeMultiTenantId>false</computeMultiTenantId>
-      <cacheEntryName>override-entry-cache</cacheEntryName>
-      <cacheEntryWithoutReferencesName>override-entry-cache-wo-ref
-      </cacheEntryWithoutReferencesName>
       <negativeCaching>true</negativeCaching>
     </directory>
 

@@ -18,22 +18,6 @@
       </references>
     </directory>
 
-    <directory name="groupCoreDirectory">
-      <schema>schema1</schema>
-      <docType>OtherDirDoc</docType>
-      <directoriesPath>/directories</directoriesPath>
-      <directoriesType>HiddenFolder</directoriesType>
-      <directoryType>Folder</directoryType>
-      <references>
-        <inverseReference field="members" directory="userCoreDirectory"
-          dualReferenceField="groups" />
-        <coreDirectoryReference field="subGroups" directory="groupCoreDirectory"
-          targetField="parentGroupId" />
-        <inverseReference field="parentGroups"
-          directory="groupCoreDirectory" dualReferenceField="subGroups" />
-      </references>
-    </directory>
-
   </extension>
 
 </component>

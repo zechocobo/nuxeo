@@ -21,8 +21,10 @@ package org.nuxeo.ecm.directory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,10 +55,6 @@ public class DirectoryRegistry {
     // used under synchronization
     protected Map<String, List<BaseDirectoryDescriptor>> allDescriptors = new HashMap<>();
 
-    /** What descriptor use what templates, to recompute them when templates change. */
-    // used under synchronization
-    protected Map<String, Set<String>> descriptorsForTemplates = new HashMap<>();
-
     /** Effective descriptors. */
     // used under synchronization
     protected Map<String, BaseDirectoryDescriptor> descriptors = new HashMap<>();
@@ -80,16 +78,20 @@ public class DirectoryRegistry {
     }
 
     protected void contributionChanged(BaseDirectoryDescriptor contrib) {
-        String id = contrib.name;
-        if (contrib.template) {
-            removeDirectory(id); // a template cannot have a directory (just in case)
-            recomputeDescriptor(id); // recompute effective template descriptor (templates may be overridden)
-            Set<String> ids = descriptorsForTemplates.getOrDefault(id, Collections.emptySet());
-            for (String did : ids) {
-                recomputeDescriptor(did); // recompute all directories using that template
+        Set<String> done = new HashSet<>();
+        Deque<String> todo = new LinkedList<String>(Collections.singleton(contrib.name));
+        while (!todo.isEmpty()) {
+            String id = todo.pop();
+            if (!done.add(id)) {
+                continue;
             }
-        } else {
-            recomputeDescriptor(id);
+            contrib = recomputeDescriptor(id);
+            if (contrib != null && contrib.template) {
+                // find dependent directories
+                allDescriptors.values().forEach(
+                        contribList -> contribList.stream().filter(c -> id.equals(c.extendz)).forEach(
+                                c -> todo.add(c.name)));
+            }
         }
     }
 
@@ -101,44 +103,36 @@ public class DirectoryRegistry {
     }
 
     /** Recomputes the effective descriptor for a directory id. */
-    protected void recomputeDescriptor(String id) {
+    protected BaseDirectoryDescriptor recomputeDescriptor(String id) {
         removeDirectory(id);
         // compute effective descriptor
         List<BaseDirectoryDescriptor> list = allDescriptors.getOrDefault(id, Collections.emptyList());
         BaseDirectoryDescriptor contrib = null;
         for (BaseDirectoryDescriptor next : list) {
+            // removal
+            if (next.remove) {
+                contrib = null;
+                continue;
+            }
+            // extending templates
             String extendz = next.extendz;
             if (extendz != null) {
                 // merge from base
                 BaseDirectoryDescriptor base = descriptors.get(extendz);
                 if (base != null && base.template) {
                     // merge generic base descriptor into specific one from the template
-                    contrib = base.clone();
-                    contrib.template = false;
-                    contrib.name = next.name;
-                    contrib.merge(next);
-                } else {
-                    log.debug("Directory " + id + " extends non-existing directory template: " + extendz);
-                    contrib = null;
+                    base = base.clone();
+                    base.template = false;
+                    base.name = next.name;
+                    next = merge(base, next);
                 }
-                // record template link, with transitive templates
-                // we only add things to this, never remove (except for shutdown)
-                // but this is ok as the goal is to do invalidations, and doing a few more is harmless
-                do {
-                    descriptorsForTemplates.computeIfAbsent(extendz, k -> new HashSet<>()).add(id);
-                    base = descriptors.get(extendz);
-                    extendz = base == null ? null : base.extendz;
-                } while (extendz != null);
-            } else if (next.remove) {
-                contrib = null;
-            } else if (contrib == null) {
+            }
+            // merge from previous
+            if (contrib == null) {
                 // first descriptor or first one after a remove
                 contrib = next.clone();
-            } else if (contrib.getClass() == next.getClass()) {
-                contrib.merge(next);
             } else {
-                log.warn("Directory " + id + " redefined with different factory");
-                contrib = next.clone();
+                contrib = merge(contrib, next);
             }
         }
         if (contrib == null) {
@@ -146,16 +140,46 @@ public class DirectoryRegistry {
         } else {
             descriptors.put(id, contrib);
         }
+        return contrib;
+    }
+
+    /**
+     * Merge two descriptors. If one of them is a BaseDirectoryDescriptor then use the other's class for the merge.
+     */
+    protected BaseDirectoryDescriptor merge(BaseDirectoryDescriptor a, BaseDirectoryDescriptor b) {
+        if (b.getClass().isAssignableFrom(a.getClass())) {
+            // a is b or a subclass of b
+            a.merge(b);
+            return a;
+        }
+        if (a.getClass().isAssignableFrom(b.getClass())) {
+            // b is a subclass of a
+            BaseDirectoryDescriptor c;
+            try {
+                c = b.getClass().newInstance();
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+            c.merge(a);
+            c.merge(b);
+            return c;
+        }
+        // we'll lose information but do the merge anyway
+        a.merge(b);
+        return a;
     }
 
     /**
      * Gets the effective directory descriptor with the given id.
+     * <p>
+     * Templates are not returned.
      *
      * @param id the directory id
      * @return the effective directory descriptor, or {@code null} if not found
      */
     public synchronized BaseDirectoryDescriptor getDirectoryDescriptor(String id) {
-        return descriptors.get(id);
+        BaseDirectoryDescriptor descriptor = descriptors.get(id);
+        return descriptor.template ? null : descriptor;
     }
 
     /**
@@ -168,7 +192,7 @@ public class DirectoryRegistry {
         Directory dir = directories.get(id);
         if (dir == null) {
             BaseDirectoryDescriptor descriptor = descriptors.get(id);
-            if (descriptor != null) {
+            if (descriptor != null && !descriptor.template) {
                 dir = descriptor.newDirectory();
                 directories.put(id,  dir);
             }
@@ -216,7 +240,6 @@ public class DirectoryRegistry {
             shutdownDirectory(dir);
         }
         allDescriptors.clear();
-        descriptorsForTemplates.clear();
         descriptors.clear();
         directories.clear();
     }

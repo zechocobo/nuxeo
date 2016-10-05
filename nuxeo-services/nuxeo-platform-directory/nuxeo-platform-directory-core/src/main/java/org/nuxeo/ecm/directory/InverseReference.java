@@ -69,7 +69,7 @@ public class InverseReference extends AbstractReference {
     protected void checkDualReference() throws DirectoryException {
         if (dualReference == null) {
             List<Reference> references = getTargetDirectory().getReferences(dualReferenceName);
-            if (references.size() == 0) {
+            if (references == null || references.isEmpty()) {
                 dualReference = null;
             } else if (references.size() == 1) {
                 dualReference = references.get(0);

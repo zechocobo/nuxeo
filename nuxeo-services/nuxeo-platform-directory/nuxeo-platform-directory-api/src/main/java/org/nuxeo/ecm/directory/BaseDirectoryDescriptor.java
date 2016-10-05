@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.common.xmap.annotation.XNode;
@@ -250,6 +251,9 @@ public class BaseDirectoryDescriptor implements Cloneable {
     public void merge(BaseDirectoryDescriptor other) {
         template = template || other.template;
 
+        if (other.name != null) {
+            name = other.name;
+        }
         if (other.parentDirectory != null) {
             parentDirectory = other.parentDirectory;
         }
@@ -327,6 +331,11 @@ public class BaseDirectoryDescriptor implements Cloneable {
             }
         }
         return res;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 
 }

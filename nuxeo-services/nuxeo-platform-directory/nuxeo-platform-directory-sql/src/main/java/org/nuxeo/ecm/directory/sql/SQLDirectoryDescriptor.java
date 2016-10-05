@@ -66,11 +66,11 @@ public class SQLDirectoryDescriptor extends BaseDirectoryDescriptor {
     }
 
     public Reference[] getInverseReferences() {
-        return inverseReferences;
+        return inverseReferences == null ? new Reference[0] : inverseReferences;
     }
 
     public Reference[] getTableReferences() {
-        return tableReferences;
+        return tableReferences == null ? new Reference[0] : tableReferences;
     }
 
     public boolean isAutoincrementIdField() {

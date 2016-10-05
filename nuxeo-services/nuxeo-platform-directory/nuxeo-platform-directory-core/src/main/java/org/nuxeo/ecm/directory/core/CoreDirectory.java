@@ -19,14 +19,10 @@
  */
 package org.nuxeo.ecm.directory.core;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-
 import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
@@ -57,8 +53,6 @@ public class CoreDirectory extends AbstractDirectory {
 
     public static final String DEFAULT_DIRECTORY_TYPE = "Folder";
 
-    protected volatile boolean initialized;
-
     protected String repositoryName;
 
     /** The path of the folder for this directory. */
@@ -78,14 +72,8 @@ public class CoreDirectory extends AbstractDirectory {
 
     @Override
     public Session getSession() throws DirectoryException {
-        boolean loadData = initializeIfNeeded();
         CoreDirectorySession session = new CoreDirectorySession(this);
         addSession(session);
-        if (loadData && descriptor.getDataFileName() != null) {
-            Schema schema = Framework.getService(SchemaManager.class).getSchema(getSchema());
-            DirectoryCSVLoader.loadData(descriptor.getDataFileName(), descriptor.getDataFileCharacterSeparator(),
-                    schema, session::createEntry);
-        }
         return session;
     }
 
@@ -94,35 +82,45 @@ public class CoreDirectory extends AbstractDirectory {
         return directoryPath;
     }
 
-    protected boolean initializeIfNeeded() {
-        if (!initialized) {
-            synchronized (this) {
-                if (!initialized) {
-                    initialized = true;
-                    return initialize();
-                }
-            }
-        }
-        return false;
-    }
-
-    protected boolean initialize() {
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Initialize only basic stuff. The rest of the initialization is called by the CoreDirectoryService
+     * RepositoryInitializationHandler when the session is ready.
+     */
+    @Override
+    public void initialize() {
         repositoryName = getDescriptor().repositoryName;
         if (StringUtils.isBlank(repositoryName)) {
             repositoryName = Framework.getService(RepositoryManager.class).getDefaultRepositoryName();
         }
-        return CoreInstance.doPrivileged(repositoryName, this::initializeSession).booleanValue();
     }
 
-    protected Boolean initializeSession(CoreSession session) {
-        Boolean loadData = FALSE;
+    /** Called by CoreDirectoryInitializationHandler to finish initializing the directory given a CoreSession. */
+    public void initializeCoreSession(CoreSession coreSession) {
+        if (!coreSession.getRepositoryName().equals(repositoryName)) {
+            // sanity check, although the caller should have done it already
+            return;
+        }
+        boolean loadData = initializeStructure(coreSession);
+        if (loadData && descriptor.getDataFileName() != null) {
+            try (Session session = getSession()) {
+                Schema schema = Framework.getService(SchemaManager.class).getSchema(getSchema());
+                DirectoryCSVLoader.loadData(descriptor.getDataFileName(), descriptor.getDataFileCharacterSeparator(),
+                        schema, session::createEntry);
+            }
+        }
+    }
+
+    public boolean initializeStructure(CoreSession coreSession) {
+        boolean loadData = false;
         boolean save = false;
         CoreDirectoryDescriptor descriptor = getDescriptor();
 
         String directoriesPath = getDirectoriesPath();
         DocumentModel directories;
-        if (session.exists(new PathRef(directoriesPath))) {
-            directories = session.getDocument(new PathRef(directoriesPath));
+        if (coreSession.exists(new PathRef(directoriesPath))) {
+            directories = coreSession.getDocument(new PathRef(directoriesPath));
         } else {
             // create the root of all directories
             // TODO this is not cluster-safe
@@ -134,34 +132,34 @@ public class CoreDirectory extends AbstractDirectory {
                 directoriesParentPath = directoriesPath.substring(0, pos);
             }
             String directoriesName = directoriesPath.substring(pos + 1);
-            directories = session.createDocumentModel(directoriesParentPath, directoriesName,
+            directories = coreSession.createDocumentModel(directoriesParentPath, directoriesName,
                     descriptor.directoriesType);
             directories.setPropertyValue("dc:title", directoriesName);
-            directories = session.createDocument(directories);
+            directories = coreSession.createDocument(directories);
             // hide this
             restrictToAdministrators(directories);
-            session.saveDocument(directories);
+            coreSession.saveDocument(directories);
             save = true;
         }
 
         String tableName = descriptor.tableName == null ? descriptor.name : descriptor.tableName;
         String directoryPath = directoriesPath + '/' + tableName;
         DocumentModel directory;
-        if (save || !session.exists(new PathRef(directoryPath))) {
+        if (save || !coreSession.exists(new PathRef(directoryPath))) {
             // create the directory
             // TODO this is not cluster-safe
-            directory = session.createDocumentModel(directoriesPath, tableName, descriptor.directoryType);
+            directory = coreSession.createDocumentModel(directoriesPath, tableName, descriptor.directoryType);
             directory.setPropertyValue("dc:title", descriptor.name);
-            directory = session.createDocument(directory);
+            directory = coreSession.createDocument(directory);
             save = true;
-            loadData = TRUE;
+            loadData = true;
         } else {
-            directory = session.getDocument(new PathRef(directoryPath));
+            directory = coreSession.getDocument(new PathRef(directoryPath));
         }
         directoryFolderId = directory.getId();
         CoreDirectory.this.directoryPath = directoryPath;
         if (save) {
-            session.save();
+            coreSession.save();
         }
         return loadData;
     }

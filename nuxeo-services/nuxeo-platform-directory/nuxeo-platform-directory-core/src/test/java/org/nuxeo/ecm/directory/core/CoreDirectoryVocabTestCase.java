@@ -39,7 +39,6 @@ import javax.inject.Inject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.test.CoreFeature;
@@ -54,7 +53,6 @@ import org.nuxeo.ecm.platform.login.test.ClientLoginFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
 
 /**
@@ -97,7 +95,7 @@ public abstract class CoreDirectoryVocabTestCase {
         // be sure we don't retrieve a leaked security context
         Framework.login();
         Directory dir = directoryService.getDirectory(DIR_NAME);
-        ((CoreDirectory) dir).initialized = false; // to re-populate /directories each time
+        dir.initialize(); // to re-populate /directories each time
         session = dir.getSession();
 
         Map<String, Object> map = new HashMap<>();

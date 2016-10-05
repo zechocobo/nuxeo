@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2007 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2016 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  *
  * Contributors:
- *     Nuxeo - initial API and implementation
- *
- * $Id$
+ *     Olivier Grisel
+ *     Robert Browning
+ *     Florent Guillaume
  */
-
 package org.nuxeo.ecm.directory.ldap;
 
 import java.io.IOException;
@@ -63,9 +62,6 @@ import org.nuxeo.runtime.api.Framework;
 
 /**
  * Implementation of the Directory interface for servers implementing the Lightweight Directory Access Protocol.
- *
- * @author ogrisel
- * @author Robert Browning
  */
 public class LDAPDirectory extends AbstractDirectory {
 
@@ -102,18 +98,11 @@ public class LDAPDirectory extends AbstractDirectory {
 
     @Override
     public List<Reference> getReferences(String referenceFieldName) {
-        if (schemaFieldMap == null) {
-            initLDAPConfig();
-        }
         return references.get(referenceFieldName);
     }
 
-    /**
-     * Lazy init method for ldap config
-     *
-     * @since 6.0
-     */
-    protected void initLDAPConfig() {
+    @Override
+    public boolean initializeConnection() {
         LDAPDirectoryDescriptor ldapDirectoryDesc = getDescriptor();
         // computing attributes that will be useful for all sessions
         SchemaManager schemaManager = Framework.getLocalService(SchemaManager.class);
@@ -148,6 +137,7 @@ public class LDAPDirectory extends AbstractDirectory {
         log.debug(String.format("initialized LDAP directory %s with fields [%s] and references [%s]", getName(),
                 StringUtils.join(schemaFieldMap.keySet().toArray(), ", "),
                 StringUtils.join(references.keySet().toArray(), ", ")));
+        return false; // no data load
     }
 
     /**
@@ -322,9 +312,6 @@ public class LDAPDirectory extends AbstractDirectory {
 
     @Override
     public Session getSession() throws DirectoryException {
-        if (schemaFieldMap == null) {
-            initLDAPConfig();
-        }
         DirContext context;
         if (testServer != null) {
             context = testServer.getContext();

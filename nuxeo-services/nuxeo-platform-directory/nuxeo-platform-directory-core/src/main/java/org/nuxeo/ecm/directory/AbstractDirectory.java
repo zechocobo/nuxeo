@@ -31,8 +31,12 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelComparator;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Schema;
 import org.nuxeo.ecm.directory.api.DirectoryDeleteConstraint;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
@@ -83,6 +87,28 @@ public abstract class AbstractDirectory implements Directory {
 
     /** To be implemented with a more specific return type. */
     public abstract BaseDirectoryDescriptor getDescriptor();
+
+    @Override
+    public void initialize() {
+        boolean loadData = initializeConnection();
+        if (loadData && descriptor.getDataFileName() != null) {
+            try (Session session = getSession()) {
+                Schema schema = Framework.getService(SchemaManager.class).getSchema(getSchema());
+                TransactionHelper.runInTransaction(() -> DirectoryCSVLoader.loadData(descriptor.getDataFileName(),
+                        descriptor.getDataFileCharacterSeparator(), schema, session::createEntry));
+            }
+        }
+    }
+
+    /**
+     * Directory-specific method checking the persisted data and deciding if CSV files have to be loaded.
+     *
+     * @return {@code true} if CSV data should be loaded
+     * @since 8.4
+     */
+    public boolean initializeConnection() {
+        return false; // no data load
+    }
 
     @Override
     public String getName() {

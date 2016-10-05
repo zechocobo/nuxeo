@@ -108,7 +108,7 @@ public class TestCoreDirectory {
         // be sure we don't retrieve a leaked security context
         Framework.login();
         Directory dir = directoryService.getDirectory(DIR_NAME);
-        ((CoreDirectory) dir).initialized = false; // to re-populate /directories each time
+        dir.initialize(); // to re-populate /directories each time
         session = dir.getSession();
         populate();
     }

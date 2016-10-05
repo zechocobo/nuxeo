@@ -45,6 +45,7 @@ import org.nuxeo.ecm.directory.BaseSession;
 import org.nuxeo.ecm.directory.DirectoryException;
 import org.nuxeo.ecm.directory.PasswordHelper;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * Implementation of a {@link org.nuxeo.ecm.directory.Session Session} for a {@link CoreDirectory}.
@@ -115,14 +116,15 @@ public class CoreDirectorySession extends BaseSession {
         if (!hasPermission(SecurityConstants.READ)) {
             return null;
         }
-        return CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
-            if (!session.exists(pathRef)) {
-                return null;
-            }
-            DocumentModel doc = session.getDocument(pathRef);
-            return docToEntry(id, doc);
-        });
+        return TransactionHelper.runInTransaction(
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
+                    if (!session.exists(pathRef)) {
+                        return null;
+                    }
+                    DocumentModel doc = session.getDocument(pathRef);
+                    return docToEntry(id, doc);
+                }));
     }
 
     /** Maps a core document to a directory entry document. */
@@ -142,14 +144,15 @@ public class CoreDirectorySession extends BaseSession {
         if (!hasPermission(SecurityConstants.READ)) {
             return new DocumentModelListImpl(0);
         }
-        return CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            DocumentModelList docs = session.getChildren(new PathRef(getDirectory().directoryPath));
-            DocumentModelList entries = new DocumentModelListImpl(docs.size());
-            for (DocumentModel doc : docs) {
-                entries.add(docToEntry(doc.getName(), doc));
-            }
-            return entries;
-        });
+        return TransactionHelper.runInTransaction(
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    DocumentModelList docs = session.getChildren(new PathRef(getDirectory().directoryPath));
+                    DocumentModelList entries = new DocumentModelListImpl(docs.size());
+                    for (DocumentModel doc : docs) {
+                        entries.add(docToEntry(doc.getName(), doc));
+                    }
+                    return entries;
+                }));
     }
 
     @Override
@@ -174,17 +177,18 @@ public class CoreDirectorySession extends BaseSession {
             }
             properties.put(fieldId, value);
         }
-        return CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
-            if (session.exists(pathRef)) {
-                throw new DirectoryException(String.format("Entry with id %s already exists", id));
-            }
-            DocumentModel doc = session.createDocumentModel(getDirectory().directoryPath, id, docType);
-            doc.setProperties(coreSchemaName, properties);
-            doc = session.createDocument(doc);
-            session.save();
-            return docToEntry(id, doc);
-        });
+        return TransactionHelper.runInTransaction(
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
+                    if (session.exists(pathRef)) {
+                        throw new DirectoryException(String.format("Entry with id %s already exists", id));
+                    }
+                    DocumentModel doc = session.createDocumentModel(getDirectory().directoryPath, id, docType);
+                    doc.setProperties(coreSchemaName, properties);
+                    doc = session.createDocument(doc);
+                    session.save();
+                    return docToEntry(id, doc);
+                }));
     }
 
     @Override
@@ -194,34 +198,35 @@ public class CoreDirectorySession extends BaseSession {
         if (id == null) {
             throw new DirectoryException("Cannot update entry with null id: " + update.getProperties(schemaName));
         }
-        CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
-            if (!session.exists(pathRef)) {
-                throw new DirectoryException("Missing entry with id: " + id);
-            }
-            DocumentModel doc = session.getDocument(pathRef);
-            List<String> updatedRefs = new ArrayList<String>();
-            for (Entry<String, Object> es : update.getProperties(schemaName).entrySet()) {
-                // TODO reference
-                String key = es.getKey();
-                if (idFieldPrefixed.equals(key)) {
-                    continue;
-                }
-                if (getDirectory().isReference(key)) {
-                    updatedRefs.add(key);
-                } else {
-                    doc.setPropertyValue(key, (Serializable) es.getValue());
-                }
-            }
-            // TODO update reference fields
-            // for (String referenceFieldName : updatedRefs) {
-            // Reference reference = directory.getReference(referenceFieldName);
-            // List<String> targetIds = (List<String>) update.getProperty(schemaName, referenceFieldName);
-            // reference.setTargetIdsForSource(update.getId(), targetIds);
-            // }
-            session.saveDocument(doc);
-            session.save();
-        });
+        TransactionHelper.runInTransaction( //
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
+                    if (!session.exists(pathRef)) {
+                        throw new DirectoryException("Missing entry with id: " + id);
+                    }
+                    DocumentModel doc = session.getDocument(pathRef);
+                    List<String> updatedRefs = new ArrayList<String>();
+                    for (Entry<String, Object> es : update.getProperties(schemaName).entrySet()) {
+                        // TODO reference
+                        String key = es.getKey();
+                        if (idFieldPrefixed.equals(key)) {
+                            continue;
+                        }
+                        if (getDirectory().isReference(key)) {
+                            updatedRefs.add(key);
+                        } else {
+                            doc.setPropertyValue(key, (Serializable) es.getValue());
+                        }
+                    }
+                    // TODO update reference fields
+                    // for (String referenceFieldName : updatedRefs) {
+                    // Reference reference = directory.getReference(referenceFieldName);
+                    // List<String> targetIds = (List<String>) update.getProperty(schemaName, referenceFieldName);
+                    // reference.setTargetIdsForSource(update.getId(), targetIds);
+                    // }
+                    session.saveDocument(doc);
+                    session.save();
+                }));
     }
 
     @Override
@@ -237,15 +242,16 @@ public class CoreDirectorySession extends BaseSession {
         if (id == null) {
             throw new DirectoryException("Cannot delete entry with null id");
         }
-        CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
-            if (!session.exists(pathRef)) {
-                return;
-            }
-            // TODO first remove references to this entry
-            session.removeDocument(pathRef);
-            session.save();
-        });
+        TransactionHelper.runInTransaction( //
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    PathRef pathRef = new PathRef(getDirectory().directoryPath + '/' + id);
+                    if (!session.exists(pathRef)) {
+                        return;
+                    }
+                    // TODO first remove references to this entry
+                    session.removeDocument(pathRef);
+                    session.save();
+                }));
     }
 
     @Override
@@ -288,14 +294,15 @@ public class CoreDirectorySession extends BaseSession {
         query.append(docType);
         query.append(" WHERE ");
         addClauses(query, filter, fulltext);
-        return CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            DocumentModelList docs = session.query(query.toString(), null, limit, offset, false);
-            DocumentModelList entries = new DocumentModelListImpl(docs.size());
-            for (DocumentModel doc : docs) {
-                entries.add(docToEntry(doc.getName(), doc));
-            }
-            return entries;
-        });
+        return TransactionHelper.runInTransaction(
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    DocumentModelList docs = session.query(query.toString(), null, limit, offset, false);
+                    DocumentModelList entries = new DocumentModelListImpl(docs.size());
+                    for (DocumentModel doc : docs) {
+                        entries.add(docToEntry(doc.getName(), doc));
+                    }
+                    return entries;
+                }));
     }
 
     @Override
@@ -326,15 +333,16 @@ public class CoreDirectorySession extends BaseSession {
         query.append(docType);
         query.append(" WHERE ");
         addClauses(query, filter, fulltext);
-        return CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
-            List<String> results = new ArrayList<>();
-            try (IterableQueryResult it = session.queryAndFetch(query.toString(), NXQL.NXQL)) {
-                for (Map<String, Serializable> map : it) {
-                    results.add((String) map.get(nxqlCol));
-                }
-            }
-            return results;
-        });
+        return TransactionHelper.runInTransaction(
+                () -> CoreInstance.doPrivileged(getDirectory().repositoryName, session -> {
+                    List<String> results = new ArrayList<>();
+                    try (IterableQueryResult it = session.queryAndFetch(query.toString(), NXQL.NXQL)) {
+                        for (Map<String, Serializable> map : it) {
+                            results.add((String) map.get(nxqlCol));
+                        }
+                    }
+                    return results;
+                }));
     }
 
     /** Finds the NXQL column name to use for the given property. */

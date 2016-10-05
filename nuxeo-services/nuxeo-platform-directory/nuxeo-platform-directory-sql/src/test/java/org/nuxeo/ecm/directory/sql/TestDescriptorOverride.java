@@ -39,7 +39,8 @@ import org.nuxeo.runtime.test.runner.RuntimeHarness;
 @Features(SQLDirectoryFeature.class)
 @RepositoryConfig(cleanup = Granularity.METHOD)
 @LocalDeploy({ "org.nuxeo.ecm.directory.sql.tests:test-sql-directories-schema-override.xml",
-        "org.nuxeo.ecm.directory.sql.tests:test-sql-directories-bundle.xml" })
+        "org.nuxeo.ecm.directory.sql.tests:test-sql-directories-bundle.xml",
+        "org.nuxeo.ecm.directory.sql.tests:test-sql-directories-override-bundle.xml" })
 public class TestDescriptorOverride {
 
     @Inject
@@ -53,35 +54,16 @@ public class TestDescriptorOverride {
         SQLDirectory sqlDir = (SQLDirectory) directoryService.getDirectory("userDirectory");
         SQLDirectoryDescriptor config = sqlDir.getDescriptor();
 
+        // override
         assertEquals("always", config.getCreateTablePolicy());
-        assertEquals(100, config.getQuerySizeLimit());
-        assertFalse(config.isAutoincrementIdField());
-        assertTrue(config.isComputeMultiTenantId());
-        Assert.assertNull(config.cacheEntryName);
-        Assert.assertNull(config.cacheEntryWithoutReferencesName);
-        Assert.assertNull(config.negativeCaching);
+        assertEquals(123, config.getQuerySizeLimit());
+        assertTrue(config.isAutoincrementIdField());
+        assertFalse(config.isComputeMultiTenantId());
+        Assert.assertEquals(Boolean.TRUE, config.negativeCaching);
+
+        // inherit
         assertEquals("test-users.csv", config.getDataFileName());
-
-        harness.deployContrib("org.nuxeo.ecm.directory.sql.tests", "test-sql-directories-override-bundle.xml");
-        try {
-            sqlDir = (SQLDirectory) directoryService.getDirectory("userDirectory");
-            config = sqlDir.getDescriptor();
-
-            // override
-            assertEquals("never", config.getCreateTablePolicy());
-            assertEquals(123, config.getQuerySizeLimit());
-            assertTrue(config.isAutoincrementIdField());
-            assertFalse(config.isComputeMultiTenantId());
-            Assert.assertEquals("override-entry-cache", config.cacheEntryName);
-            Assert.assertEquals("override-entry-cache-wo-ref", config.cacheEntryWithoutReferencesName);
-            Assert.assertEquals(Boolean.TRUE, config.negativeCaching);
-
-            // inherit
-            assertEquals("test-users.csv", config.getDataFileName());
-            assertEquals(1, config.getTableReferences().length);
-        } finally {
-            harness.undeployContrib("org.nuxeo.ecm.directory.sql.tests", "test-sql-directories-override-bundle.xml");
-        }
+        assertEquals(1, config.getTableReferences().length);
     }
 
 }
