@@ -110,5 +110,12 @@
       <artifactId>hibernate-core</artifactId>
       <scope>runtime</scope>
     </dependency>
+
+    <!-- test scope -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
