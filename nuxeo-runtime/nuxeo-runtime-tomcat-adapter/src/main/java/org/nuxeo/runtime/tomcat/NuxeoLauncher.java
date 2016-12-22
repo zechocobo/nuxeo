@@ -20,13 +20,15 @@ package org.nuxeo.runtime.tomcat;
 
 import java.io.File;
 import java.io.IOException;
+
 import javax.management.JMException;
-import org.apache.catalina.Container;
+
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Loader;
-import org.apache.catalina.core.ContainerBase;
+import org.apache.catalina.Manager;
+import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,8 +79,8 @@ public class NuxeoLauncher implements LifecycleListener {
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
         Lifecycle lf = event.getLifecycle();
-        if (lf instanceof ContainerBase) {
-            Loader loader = ((Container) lf).getLoader();
+        if (lf instanceof ManagerBase) {
+            Loader loader = ((Manager) lf).getContext().getLoader();
             if (loader instanceof NuxeoWebappLoader) {
                 handleEvent((NuxeoWebappLoader) loader, event);
             }
