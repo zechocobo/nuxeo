@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.admin.service.service.hot-reload-studio-snapshot-service" version="1.0">
+
+  <implementation class="org.nuxeo.ecm.admin.service.HotReloadStudioSnapshotServiceImpl" />
+
+  <service>
+    <provide interface="org.nuxeo.ecm.admin.service.HotReloadStudioSnapshotService" />
+  </service>
+</component>
