@@ -29,14 +29,12 @@ import org.nuxeo.connect.connector.ConnectServerError;
 import org.nuxeo.connect.data.DownloadablePackage;
 import org.nuxeo.connect.data.DownloadingPackage;
 import org.nuxeo.connect.packages.PackageManager;
-import org.nuxeo.connect.packages.dependencies.TargetPlatformFilterHelper;
 import org.nuxeo.connect.update.LocalPackage;
 import org.nuxeo.connect.update.PackageException;
 import org.nuxeo.connect.update.PackageState;
 import org.nuxeo.connect.update.PackageUpdateService;
 import org.nuxeo.connect.update.ValidationStatus;
 import org.nuxeo.connect.update.task.Task;
-import org.nuxeo.ecm.admin.runtime.PlatformVersionHelper;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -100,15 +98,6 @@ public class HotReloadStudioSnapshot {
     }
 
     public void hotReloadPackage(DownloadablePackage remotePkg) {
-        if (validate) {
-            pm.flushCache();
-
-            String targetPlatform = PlatformVersionHelper.getPlatformFilter();
-            if (!TargetPlatformFilterHelper.isCompatibleWithTargetPlatform(remotePkg, targetPlatform)) {
-                throw new NuxeoException(
-                        String.format("This package is not validated for your current platform: %s", targetPlatform));
-            }
-        }
 
         // Effective install
         try {

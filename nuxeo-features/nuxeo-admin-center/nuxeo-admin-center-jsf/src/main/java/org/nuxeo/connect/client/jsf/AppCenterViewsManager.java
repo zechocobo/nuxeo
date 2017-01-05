@@ -419,6 +419,7 @@ public class AppCenterViewsManager implements Serializable {
                     status.addError(String.format("Cannot perform validation: remote package '%s' not found", packageId));
                     return;
                 }
+
                 PackageDependency[] pkgDeps = remotePkg.getDependencies();
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("%s target platforms: %s", remotePkg,
