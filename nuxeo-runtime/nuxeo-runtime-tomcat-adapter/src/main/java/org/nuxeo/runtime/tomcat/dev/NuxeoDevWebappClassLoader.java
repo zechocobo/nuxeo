@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2008 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2017 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@
  *
  * Contributors:
  *     bstefanescu
- *
- * $Id$
  */
-
 package org.nuxeo.runtime.tomcat.dev;
 
 import java.io.IOException;
@@ -37,8 +34,8 @@ import org.nuxeo.runtime.tomcat.NuxeoWebappClassLoader;
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
 
-public class NuxeoDevWebappClassLoader extends NuxeoWebappClassLoader implements MutableClassLoader,
-        WebResourcesCacheFlusher {
+public class NuxeoDevWebappClassLoader extends NuxeoWebappClassLoader
+        implements MutableClassLoader, WebResourcesCacheFlusher {
 
     public LocalClassLoader createLocalClassLoader(URL... urls) {
         LocalClassLoader cl = new LocalURLClassLoader(urls, this);
@@ -54,12 +51,12 @@ public class NuxeoDevWebappClassLoader extends NuxeoWebappClassLoader implements
 
     public NuxeoDevWebappClassLoader() {
         super();
-        this.children = new ArrayList<LocalClassLoader>();
+        this.children = new ArrayList<>();
     }
 
     public NuxeoDevWebappClassLoader(ClassLoader parent) {
         super(parent);
-        this.children = new ArrayList<LocalClassLoader>();
+        this.children = new ArrayList<>();
     }
 
     public void setBootstrap(DevFrameworkBootstrap bootstrap) {
@@ -158,7 +155,7 @@ public class NuxeoDevWebappClassLoader extends NuxeoWebappClassLoader implements
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        CompoundEnumeration<URL> enums = new CompoundEnumeration<URL>();
+        CompoundEnumeration<URL> enums = new CompoundEnumeration<>();
         enums.add(super.getResources(name));
         for (LocalClassLoader cl : getChildren()) {
             enums.add(cl.getLocalResources(name));
@@ -169,11 +166,6 @@ public class NuxeoDevWebappClassLoader extends NuxeoWebappClassLoader implements
     @Override
     public void addURL(URL url) {
         super.addURL(url);
-    }
-
-    @Override
-    public void setParentClassLoader(ClassLoader pcl) {
-        super.setParentClassLoader(pcl);
     }
 
     public ClassLoader getParentClassLoader() {
@@ -187,7 +179,7 @@ public class NuxeoDevWebappClassLoader extends NuxeoWebappClassLoader implements
 
     protected static class CompoundEnumeration<E> implements Enumeration<E> {
 
-        private final List<Enumeration<E>> enums = new ArrayList<Enumeration<E>>();
+        private final List<Enumeration<E>> enums = new ArrayList<>();
 
         private int index = 0;
 

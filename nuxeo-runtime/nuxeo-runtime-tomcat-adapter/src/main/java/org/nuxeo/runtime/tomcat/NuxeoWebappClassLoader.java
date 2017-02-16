@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2008 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2017 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@
  *
  * Contributors:
  *     bstefanescu
- *
- * $Id$
  */
-
 package org.nuxeo.runtime.tomcat;
 
 import java.net.URL;
@@ -41,11 +38,6 @@ public class NuxeoWebappClassLoader extends WebappClassLoader implements Mutable
     @Override
     public void addURL(URL url) {
         super.addURL(url);
-    }
-
-    @Override
-    public void setParentClassLoader(ClassLoader pcl) {
-        super.setParentClassLoader(pcl);
     }
 
     public ClassLoader getParentClassLoader() {

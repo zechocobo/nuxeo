@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2008 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2017 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@
  *
  * Contributors:
  *     bstefanescu
- *
- * $Id$
  */
-
 package org.nuxeo.runtime.tomcat;
 
 import java.io.File;
@@ -46,7 +43,9 @@ public class NuxeoWebappLoader extends WebappLoader {
 
     public File getBaseDir() throws ReflectiveOperationException {
         if (baseDir == null) {
-            Container container = getContainer();
+            Method m = getClass().getSuperclass().getDeclaredMethod("getContainer");
+            m.setAccessible(true);
+            Container container = (Container) m.invoke(this);
             Method method = StandardContext.class.getDeclaredMethod("getBasePath");
             method.setAccessible(true);
             String path = (String) method.invoke(container);

@@ -1,5 +1,5 @@
 <#escape x as x?xml>
-<#assign isTomcat7 = tomcat.version?split(".")[0]?number == 7>
+<#assign isTomcat8 = tomcat.version?split(".")[0]?number == 8>
 <#assign isWizard = (nuxeo.wizard?? && nuxeo.wizard.done?? && nuxeo.wizard.done == "false")>
 <?xml version='1.0' encoding='utf-8'?>
 <!--
@@ -27,10 +27,8 @@
 
   <!--APR library loader. Documentation at /docs/apr.html -->
   <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
-  <!--Initialize Jasper prior to webapps are loaded. Documentation at /docs/jasper-howto.html -->
-  <Listener className="org.apache.catalina.core.JasperListener" />
   <!-- JMX Support for the Tomcat server. Documentation at /docs/non-existent.html -->
-<#if !isTomcat7>
+<#if !isTomcat8>
   <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
 </#if>
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />

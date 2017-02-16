@@ -41,19 +41,13 @@
 
   <target name="prepare-tomcat">
     <unzip dest="${outdir}">
-      <artifact:resolveFile key="org.apache.tomcat:tomcat:${tomcat.version}:zip:${tomcat.classifier}" />
+      <artifact:resolveFile key="org.apache.tomcat:tomcat:${tomcat.version}:zip" />
     </unzip>
     <move todir="${tomcat}">
       <fileset dir="${outdir}/apache-tomcat-${tomcat.version}" />
     </move>
     <copy tofile="${tomcat}/bin/nuxeo-launcher.jar">
     	<artifact:file key="org.nuxeo:nuxeo-launcher:::jar-with-dependencies" />
-    </copy>
-    <copy tofile="${tomcat}/bin/tomcat-juli.jar">
-      <artifact:resolveFile key="org.apache.tomcat.extras:tomcat-extras-juli" />
-    </copy>
-    <copy tofile="${tomcat}/lib/tomcat-juli-adapters.jar">
-      <artifact:resolveFile key="org.apache.tomcat.extras:tomcat-extras-juli-adapters" />
     </copy>
     <copy todir="${tomcat}">
       <fileset dir="src/main/resources/tomcat" />
