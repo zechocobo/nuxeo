@@ -47,8 +47,6 @@ import org.nuxeo.ecm.webengine.model.impl.ModuleConfiguration;
 import org.nuxeo.ecm.webengine.model.impl.ModuleManager;
 import org.osgi.framework.Bundle;
 
-import com.sun.jersey.server.impl.inject.ServerInjectableProviderContext;
-
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
@@ -60,7 +58,6 @@ public class WebEngineModule extends Application implements ApplicationFactory {
 
     public final static String WEBADAPTER_ANNO = "Lorg/nuxeo/ecm/webengine/model/WebAdapter;";
 
-    protected ServerInjectableProviderContext context;
 
     protected Bundle bundle;
 

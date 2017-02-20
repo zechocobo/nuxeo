@@ -26,7 +26,6 @@ import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.DERIVATIVE;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
@@ -36,9 +35,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParser;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.io.marshallers.json.JsonFactoryProvider;
 import org.nuxeo.ecm.core.io.registry.Reader;
 import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
 import org.nuxeo.ecm.core.io.registry.reflect.Setup;
@@ -69,11 +66,12 @@ public class DocumentModelJsonReaderLegacy implements Reader<DocumentModel> {
 
     private static void loadMethod() {
         try {
+            // TODO class doesn't exist anymore
             Class<?> legacy = Class.forName("org.nuxeo.ecm.automation.jaxrs.io.documents.JSONDocumentModelReader");
-            Method method = legacy.getMethod("readJson", JsonParser.class, MultivaluedMap.class,
-                    HttpServletRequest.class);
-            METHOD = method;
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+//            Method method = legacy.getMethod("readJson", JsonParser.class, MultivaluedMap.class,
+//                    HttpServletRequest.class);
+//            METHOD = method;
+        } catch (ClassNotFoundException | SecurityException e) {
             log.error(
                     "Unable to find method org.nuxeo.ecm.automation.jaxrs.io.documents.JSONDocumentModelReader.readJson(JsonParser, MultivaluedMap<String, String>, HttpServletRequest)",
                     e);
@@ -139,13 +137,14 @@ public class DocumentModelJsonReaderLegacy implements Reader<DocumentModel> {
 
     @Override
     public DocumentModel read(Class<?> clazz, Type genericType, MediaType mediaType, InputStream in) throws IOException {
-        try {
-            JsonParser parser = JsonFactoryProvider.get().createJsonParser(in);
-            return DocumentModel.class.cast(METHOD.invoke(null, parser, httpHeaders, request));
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            log.error("Unable to use legacy document model reading", e);
-            return null;
-        }
+//        try {
+//            JsonParser parser = JsonFactoryProvider.get().createJsonParser(in);
+//            return DocumentModel.class.cast(METHOD.invoke(null, parser, httpHeaders, request));
+//        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+//            log.error("Unable to use legacy document model reading", e);
+//            return null;
+//        }
+        return null;
     }
 
 }

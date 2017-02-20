@@ -20,6 +20,7 @@ package org.nuxeo.ecm.webengine.app;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -33,8 +34,6 @@ import org.nuxeo.ecm.core.api.validation.DocumentValidationException;
 import org.nuxeo.ecm.webengine.WebException;
 import org.nuxeo.ecm.webengine.model.exceptions.WebResourceNotFoundException;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.NotFoundException;
 
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
@@ -58,7 +57,7 @@ public class WebEngineExceptionMapper implements ExceptionMapper<Throwable> {
         }
         if (cause instanceof NotFoundException) {
             NotFoundException nfe = (NotFoundException) cause;
-            log.debug("JAX-RS 404 Not Found: " + nfe.getNotFoundUri());
+            log.debug("JAX-RS 404 Not Found: " + nfe.getMessage());
         } else if (cause instanceof WebResourceNotFoundException) {
             WebResourceNotFoundException nfe = (WebResourceNotFoundException) cause;
             log.debug("JAX-RS 404 Not Found: " + nfe.getMessage());

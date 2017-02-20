@@ -39,10 +39,6 @@ import org.nuxeo.ecm.webengine.model.ResourceType;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.contribution.impl.AbstractContributionRegistry;
 
-import com.sun.jersey.core.spi.component.ComponentScope;
-import com.sun.jersey.server.impl.modelapi.annotation.IntrospectionModeller;
-import com.sun.jersey.server.spi.component.ResourceComponentConstructor;
-
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */

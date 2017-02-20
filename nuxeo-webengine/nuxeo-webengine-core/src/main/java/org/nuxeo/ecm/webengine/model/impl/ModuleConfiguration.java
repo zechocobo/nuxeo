@@ -178,7 +178,7 @@ public class ModuleConfiguration implements Cloneable {
                 // force super module loading
                 superModule = superM.get(context);
             }
-            module = new ModuleImpl(engine, (ModuleImpl) superModule, this, context.getServerInjectableProviderContext());
+            module = new ModuleImpl(engine, (ModuleImpl) superModule, this);
         }
         return module;
     }

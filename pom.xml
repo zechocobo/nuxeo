@@ -148,7 +148,7 @@
     <apachedshared.version>0.9.7</apachedshared.version>
     <gwt.version>2.7.0-NX1</gwt.version>
     <guice.version>3.0</guice.version>
-    <jersey.version>1.18.3</jersey.version>
+    <jersey.version>2.25.1</jersey.version>
     <jetty.mortbay.version>6.1.26</jetty.mortbay.version>
     <shindig.version>1.1-BETA5-incubating-nx2</shindig.version>
     <apache.axiom.version>1.2.5</apache.axiom.version>
@@ -3164,44 +3164,38 @@
 
       <dependency>
         <!-- note that this contains all of javax.ws.rs:jsr311-api -->
-        <groupId>com.sun.jersey</groupId>
-        <artifactId>jersey-core</artifactId>
+        <groupId>org.glassfish.jersey.core</groupId>
+        <artifactId>jersey-common</artifactId>
         <version>${jersey.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.sun.jersey</groupId>
-        <artifactId>jersey-json</artifactId>
+        <groupId>org.glassfish.jersey.media</groupId>
+        <artifactId>jersey-media-json-jackson</artifactId>
         <version>${jersey.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.sun.jersey</groupId>
+        <groupId>org.glassfish.jersey.core</groupId>
         <artifactId>jersey-client</artifactId>
         <version>${jersey.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.sun.jersey</groupId>
+        <groupId>org.glassfish.jersey.core</groupId>
         <artifactId>jersey-server</artifactId>
         <version>${jersey.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-core</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
-        <groupId>com.sun.jersey</groupId>
-        <artifactId>jersey-servlet</artifactId>
+        <groupId>org.glassfish.jersey.containers</groupId>
+        <artifactId>jersey-container-servlet</artifactId>
         <version>${jersey.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.sun.jersey.contribs</groupId>
-        <artifactId>jersey-apache-client4</artifactId>
+        <groupId>org.glassfish.jersey.connectors</groupId>
+        <artifactId>jersey-apache-connector</artifactId>
         <version>${jersey.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.sun.jersey.contribs</groupId>
-        <artifactId>jersey-multipart</artifactId>
+        <groupId>org.glassfish.jersey.media</groupId>
+        <artifactId>jersey-media-multipart</artifactId>
         <version>${jersey.version}</version>
       </dependency>
 
@@ -4296,7 +4290,7 @@
         <artifactId>webdav-jaxrs</artifactId>
         <version>1.1.1</version>
         <exclusions>
-          <!-- use com.sun.jersey:jersey-core instead -->
+          <!-- use org.glassfish.jersey:jersey-common instead -->
           <exclusion>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
@@ -4378,7 +4372,7 @@
         <artifactId>jclouds-allblobstore</artifactId>
         <version>${jclouds.version}</version>
         <exclusions>
-          <!-- use com.sun.jersey:jersey-core instead -->
+          <!-- use org.glassfish.jersey:jersey-common instead -->
           <exclusion>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
@@ -5413,9 +5407,9 @@
               <!-- <dependencyConvergence /> -->
               <bannedDependencies>
                 <excludes>
-                  <exclude>javax.ws.rs:jsr311-api</exclude> <!-- included in com.sun.jersey:jersey-core -->
+                  <exclude>javax.ws.rs:jsr311-api</exclude> <!-- included in org.glassfish.jersey:jersey-common -->
                 </excludes>
-                <message>javax.ws.rs:jsr311-api must not be used, use com.sun.jersey:jersey-core instead</message>
+                <message>javax.ws.rs:jsr311-api must not be used, use org.glassfish.jersey:jersey-core instead</message>
               </bannedDependencies>
               <bannedDependencies>
                 <excludes>

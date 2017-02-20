@@ -24,13 +24,12 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import org.glassfish.jersey.server.internal.RuntimeDelegateImpl;
+import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 import org.nuxeo.ecm.webengine.jaxrs.Activator;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-
-import com.sun.jersey.api.uri.UriBuilderImpl;
-import com.sun.jersey.server.impl.provider.RuntimeDelegateImpl;
 
 /**
  * Support for jersey ServiceFinder lookups in an OSGi environment.
@@ -38,6 +37,7 @@ import com.sun.jersey.server.impl.provider.RuntimeDelegateImpl;
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  * @deprecated This class is deprecated since jersey 1.11 which fixed OSGi class loader problems.
  */
+@Deprecated
 public class ServiceClassLoader extends ClassLoader {
 
     public static ClassLoader getLoader() {
@@ -49,7 +49,7 @@ public class ServiceClassLoader extends ClassLoader {
         } else {
             ServiceClassLoader loader = new ServiceClassLoader(ctx.getBundle());
             loader.addResourceLoader(RuntimeDelegateImpl.class.getClassLoader());
-            loader.addResourceLoader(UriBuilderImpl.class.getClassLoader());
+            loader.addResourceLoader(JerseyUriBuilder.class.getClassLoader());
             return loader;
         }
     }

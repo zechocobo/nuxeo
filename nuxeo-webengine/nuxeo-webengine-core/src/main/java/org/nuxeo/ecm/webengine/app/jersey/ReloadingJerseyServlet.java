@@ -24,11 +24,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.nuxeo.ecm.webengine.WebEngine;
 import org.nuxeo.ecm.webengine.jaxrs.Reloadable;
 import org.nuxeo.runtime.api.Framework;
-
-import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 /**
  * JAX-RS servlet based on jersey servlet to provide hot reloading.
