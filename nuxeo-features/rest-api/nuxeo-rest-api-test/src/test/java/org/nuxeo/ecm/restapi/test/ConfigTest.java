@@ -24,11 +24,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.io.marshallers.json.types.SchemaJsonWriter;
@@ -37,9 +39,6 @@ import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * Test class for 'docType', 'facet' and 'schema' endpoint.
@@ -74,7 +73,7 @@ public class ConfigTest extends BaseTest {
     @Test
     public void itCanRetrieveSchemaDefinitionWithFieldConstraints() throws IOException {
         // When I call the Rest schema endpoint with fetch.schema=fields
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.putSingle("fetch." + SchemaJsonWriter.ENTITY_TYPE, SchemaJsonWriter.FETCH_FIELDS);
         JsonNode node = getResponseAsJson(RequestType.GET, "/schema/dublincore", queryParams);
 
@@ -105,7 +104,7 @@ public class ConfigTest extends BaseTest {
     public void itCanRetrieveAllSchemas() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, "/schema");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertTrue(node.isArray());
     }
 
@@ -116,7 +115,7 @@ public class ConfigTest extends BaseTest {
     public void itCanRetrieveAllFacets() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, "/facet");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertTrue(node.isArray());
     }
 
@@ -127,7 +126,7 @@ public class ConfigTest extends BaseTest {
     public void itCanRetrieveAllDocTypes() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, "/docType");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertTrue(node.isObject());
         assertTrue(node.has("doctypes"));
     }

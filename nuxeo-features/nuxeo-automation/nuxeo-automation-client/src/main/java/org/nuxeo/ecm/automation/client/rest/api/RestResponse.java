@@ -20,15 +20,15 @@
 package org.nuxeo.ecm.automation.client.rest.api;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.glassfish.jersey.client.ClientResponse;
 import org.nuxeo.ecm.automation.client.AutomationException;
-
-import com.sun.jersey.api.client.ClientResponse;
 
 /**
  * A Rest response from Nuxeo REST API.
@@ -65,8 +65,8 @@ public class RestResponse {
 
     protected void computeResponseAsJson() {
         if (responseAsJson == null) {
-            try {
-                responseAsJson = objectMapper.readTree(clientResponse.getEntityInputStream());
+            try (InputStream is = clientResponse.getEntityStream()) {
+                responseAsJson = objectMapper.readTree(is);
             } catch (IOException e) {
                 throw new AutomationException(e);
             }

@@ -24,6 +24,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.JsonNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,8 +34,6 @@ import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
-
-import com.sun.jersey.api.client.ClientResponse;
 
 @RunWith(FeaturesRunner.class)
 @Features({ RestServerFeature.class })
@@ -46,7 +45,7 @@ public class IntrospectionTests extends BaseTest {
     public void itCanFetchSchemas() throws Exception {
         ClientResponse response = getResponse(RequestType.GET, "/config/schemas");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         Assert.assertTrue(node.size() > 0);
         boolean dcFound = false;
         for (int i = 0; i < node.size(); i++) {
@@ -63,7 +62,7 @@ public class IntrospectionTests extends BaseTest {
         ClientResponse response = getResponse(RequestType.GET, "/config/schemas/dublincore");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-        String json = IOUtils.toString(response.getEntityInputStream());
+        String json = IOUtils.toString(response.getEntityStream());
         JsonAssert jsonAssert = JsonAssert.on(json);
 
         jsonAssert.has("name").isEquals("dublincore");
@@ -76,7 +75,7 @@ public class IntrospectionTests extends BaseTest {
     public void itCanFetchFacets() throws Exception {
         ClientResponse response = getResponse(RequestType.GET, "/config/facets");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         Assert.assertTrue(node.size() > 0);
 
         boolean found = false;
@@ -93,7 +92,7 @@ public class IntrospectionTests extends BaseTest {
     public void itCanFetchAFacet() throws Exception {
         ClientResponse response = getResponse(RequestType.GET, "/config/facets/HasRelatedText");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
 
         Assert.assertEquals("HasRelatedText", node.get("name").getValueAsText());
         Assert.assertEquals("relatedtext", node.get("schemas").get(0).get("name").getValueAsText());
@@ -103,7 +102,7 @@ public class IntrospectionTests extends BaseTest {
     public void itCanFetchTypes() throws Exception {
         ClientResponse response = getResponse(RequestType.GET, "/config/types");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
 
         // the export is done as a compound object rather than an array !
 
@@ -118,7 +117,7 @@ public class IntrospectionTests extends BaseTest {
     public void itCanFetchAType() throws Exception {
         ClientResponse response = getResponse(RequestType.GET, "/config/types/File");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
 
         // the export is done as a compound object rather than an array !
 

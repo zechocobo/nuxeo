@@ -18,13 +18,13 @@
  */
 package org.nuxeo.ecm.automation.client.jaxrs.spi.auth;
 
+import java.io.IOException;
+
+import javax.ws.rs.client.ClientRequestContext;
+
 import org.nuxeo.ecm.automation.client.jaxrs.spi.Connector;
 import org.nuxeo.ecm.automation.client.jaxrs.spi.Request;
 import org.nuxeo.ecm.automation.client.jaxrs.spi.RequestInterceptor;
-
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientRequest;
-import com.sun.jersey.api.client.ClientResponse;
 
 /**
  * Injects the token authentication header in the request.
@@ -48,10 +48,8 @@ public class TokenAuthInterceptor extends RequestInterceptor {
     }
 
     @Override
-    public ClientResponse handle(ClientRequest cr) throws ClientHandlerException {
-        if (!cr.getHeaders().containsKey(TOKEN_HEADER)) {
-            cr.getHeaders().add(TOKEN_HEADER, token);
-        }
-        return getNext().handle(cr);
+    public void filter(ClientRequestContext requestContext) throws IOException {
+        requestContext.getHeaders().putSingle(TOKEN_HEADER, token);
     }
+
 }

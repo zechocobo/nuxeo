@@ -273,9 +273,8 @@ public class TypeRegistry extends AbstractContributionRegistry<String, TypeDescr
     }
 
     protected void installTypeContribution(String key, TypeDescriptor object) {
-        ResourceComponentConstructor constructor = new ResourceComponentConstructor(module.sic, ComponentScope.PerRequest, IntrospectionModeller.createResource(object.clazz.get()));
         AbstractResourceType type = new ResourceTypeImpl(engine, module, null, object.type, object.clazz,
-                constructor, object.visibility);
+                object.visibility);
         if (object.superType != null) {
             type.superType = types.get(object.superType);
             assert type.superType != null; // must never be null since the object is resolved
@@ -296,8 +295,7 @@ public class TypeRegistry extends AbstractContributionRegistry<String, TypeDescr
     }
 
     protected void installAdapterContribution(String key, AdapterDescriptor object) {
-        ResourceComponentConstructor constructor = new ResourceComponentConstructor(module.sic, ComponentScope.PerRequest, IntrospectionModeller.createResource(object.clazz.get()));
-        AdapterTypeImpl type = new AdapterTypeImpl(engine, module, null, object.type, object.name, object.clazz, constructor,
+        AdapterTypeImpl type = new AdapterTypeImpl(engine, module, null, object.type, object.name, object.clazz,
                 object.visibility);
         if (object.superType != null) {
             type.superType = types.get(object.superType);

@@ -26,11 +26,13 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 
 import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.NuxeoGroup;
@@ -44,9 +46,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * Tests the users and groups Rest endpoints
@@ -77,7 +76,7 @@ public class UserGroupTest extends BaseUserTest {
         // Then it returns the Json
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
 
         assertEqualsUser("user1", "John", "Lennon", node);
 
@@ -109,7 +108,7 @@ public class UserGroupTest extends BaseUserTest {
         // Then it changes the user
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEqualsUser("user1", "Paul", "McCartney", node);
 
         nextTransaction(); // see committed changes
@@ -150,7 +149,7 @@ public class UserGroupTest extends BaseUserTest {
 
         // Then a user is created
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEqualsUser("newuser", "test", "user", node);
 
         principal = um.getPrincipal("newuser");
@@ -173,7 +172,7 @@ public class UserGroupTest extends BaseUserTest {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
         // Then i GET the Group
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEqualsGroup(group.getName(), group.getLabel(), node);
 
     }
@@ -296,13 +295,13 @@ public class UserGroupTest extends BaseUserTest {
     @Test
     public void itCanSearchUsers() throws Exception {
         // Given a search string
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.putSingle("q", "Steve");
 
         ClientResponse response = getResponse(RequestType.GET, "/user/search", queryParams);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("null", node.get("errorMessage").getValueAsText());
         ArrayNode entries = (ArrayNode) node.get("entries");
         assertEquals(1, entries.size());
@@ -328,13 +327,13 @@ public class UserGroupTest extends BaseUserTest {
     @Test
     public void itCanSearchGroups() throws Exception {
         // Given a search string
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.putSingle("q", "Lannister");
 
         ClientResponse response = getResponse(RequestType.GET, "/group/search", queryParams);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("null", node.get("errorMessage").getValueAsText());
         ArrayNode entries = (ArrayNode) node.get("entries");
         assertEquals(1, entries.size());
@@ -421,7 +420,7 @@ public class UserGroupTest extends BaseUserTest {
      * @since 5.8
      */
     private MultivaluedMap<String, String> getQueryParamsForPage(int pageIndex) {
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.putSingle("q", "*");
         queryParams.putSingle("currentPageIndex", Integer.toString(pageIndex));
         queryParams.putSingle("pageSize", "3");

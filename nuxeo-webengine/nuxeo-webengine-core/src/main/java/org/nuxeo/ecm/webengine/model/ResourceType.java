@@ -43,8 +43,6 @@ public interface ResourceType {
 
     Class<? extends Resource> getResourceClass();
 
-    <T extends Resource> T newInstance(Class<T> typeof, WebContext context);
-
     ResourceType getSuperType();
 
     Set<String> getFacets();

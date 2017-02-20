@@ -28,12 +28,14 @@ import java.util.Collections;
 import java.util.Iterator;
 
 import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,9 +59,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * @since 5.7.3
@@ -132,28 +131,28 @@ public class DirectoryTest extends BaseTest {
         assertEquals("country", node.get("entries").get(1).get("name").getTextValue());
 
         // It should not retrieve directory with unknown type
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.put("types", Arrays.asList(new String[] { "notExistingType" }));
         node = getResponseAsJson(RequestType.GET, "/directory", queryParams);
         assertEquals(DirectoryListJsonWriter.ENTITY_TYPE, node.get("entity-type").getValueAsText());
         assertEquals(0, node.get("entries").size());
 
         // It should not retrieve system directories
-        queryParams = new MultivaluedMapImpl();
+        queryParams = new MultivaluedHashMap<>();
         queryParams.put("types", Arrays.asList(new String[] { DirectoryService.SYSTEM_DIRECTORY_TYPE }));
         node = getResponseAsJson(RequestType.GET, "/directory", queryParams);
         assertEquals(DirectoryListJsonWriter.ENTITY_TYPE, node.get("entity-type").getValueAsText());
         assertEquals(0, node.get("entries").size());
 
         // It should be able to retrieve a single type
-        queryParams = new MultivaluedMapImpl();
+        queryParams = new MultivaluedHashMap<>();
         queryParams.put("types", Arrays.asList(new String[] { "toto" }));
         node = getResponseAsJson(RequestType.GET, "/directory", queryParams);
         assertEquals(DirectoryListJsonWriter.ENTITY_TYPE, node.get("entity-type").getValueAsText());
         assertEquals(1, node.get("entries").size());
 
         // It should be able to retrieve many types
-        queryParams = new MultivaluedMapImpl();
+        queryParams = new MultivaluedHashMap<>();
         queryParams.put("types", Arrays.asList(new String[] { "toto", "pouet" }));
         node = getResponseAsJson(RequestType.GET, "/directory", queryParams);
         assertEquals(DirectoryListJsonWriter.ENTITY_TYPE, node.get("entity-type").getValueAsText());

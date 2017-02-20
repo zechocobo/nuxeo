@@ -27,8 +27,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -36,20 +42,16 @@ import javax.ws.rs.core.Response;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.glassfish.jersey.media.multipart.MultiPart;
+import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.junit.Before;
+import org.nuxeo.ecm.automation.features.HTTPHelper;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.multipart.MultiPart;
-import com.sun.jersey.multipart.impl.MultiPartWriter;
 
 /**
  * @since 5.7.2
@@ -66,7 +68,7 @@ public class BaseTest {
 
     protected Client client;
 
-    protected WebResource service;
+    protected WebTarget service;
 
     @Before
     public void doBefore() throws Exception {
@@ -82,15 +84,15 @@ public class BaseTest {
      * @return
      * @since 5.7.3
      */
-    protected WebResource getServiceFor(String user, String password) {
-        ClientConfig config = new DefaultClientConfig();
-        config.getClasses().add(MultiPartWriter.class);
-        client = Client.create(config);
-        client.setConnectTimeout(TIMEOUT);
-        client.setReadTimeout(TIMEOUT);
-        client.addFilter(new HTTPBasicAuthFilter(user, password));
+    protected WebTarget getServiceFor(String user, String password) {
+        client = ClientBuilder.newBuilder()
+                              .register(MultiPartWriter.class)
+                              .property(ClientProperties.CONNECT_TIMEOUT, TIMEOUT)
+                              .property(ClientProperties.READ_TIMEOUT, TIMEOUT)
+                              .register(HttpAuthenticationFeature.basic(user, password))
+                              .build();
 
-        return client.resource("http://localhost:18090/api/v1/");
+        return client.target("http://localhost:18090/api/v1/");
     }
 
     @Inject
@@ -127,19 +129,21 @@ public class BaseTest {
 
     protected ClientResponse getResponse(RequestType requestType, String path, String data,
             MultivaluedMap<String, String> queryParams, MultiPart mp, Map<String, String> headers) {
-        WebResource wr = service.path(path);
+        WebTarget target = service.path(path);
 
         if (queryParams != null && !queryParams.isEmpty()) {
-            wr = wr.queryParams(queryParams);
+            for (Entry<String, List<String>> entry : queryParams.entrySet()) {
+                target = target.queryParam(entry.getKey(), entry.getValue().toArray(new String[0]));
+            }
         }
-        Builder builder;
+        Invocation.Builder builder;
         if (requestType == RequestType.GETES) {
-            builder = wr.accept("application/json+esentity");
+            builder = target.request("application/json+esentity");
         } else {
-            builder = wr.accept(MediaType.APPLICATION_JSON).header("X-NXDocumentProperties", "dublincore");
+            builder = target.request(MediaType.APPLICATION_JSON_TYPE).header("X-NXDocumentProperties", "dublincore");
         }
         if (mp != null) {
-            builder = wr.type(MediaType.MULTIPART_FORM_DATA_TYPE);
+            builder = target.request(MediaType.MULTIPART_FORM_DATA_TYPE);
         }
 
         if (headers == null || !(headers.containsKey("Content-Type"))) {
@@ -163,18 +167,19 @@ public class BaseTest {
         case POST:
         case POSTREQUEST:
             if (mp != null) {
-                return builder.post(ClientResponse.class, mp);
+                return builder.post(Entity.entity(mp, MediaType.MULTIPART_FORM_DATA_TYPE), ClientResponse.class);
             } else {
-                return builder.post(ClientResponse.class, data);
+                return builder.post(Entity.entity(data, MediaType.APPLICATION_JSON_TYPE), ClientResponse.class);
             }
         case PUT:
             if (mp != null) {
-                return builder.put(ClientResponse.class, mp);
+                return builder.put(Entity.entity(mp, MediaType.MULTIPART_FORM_DATA_TYPE),  ClientResponse.class);
             } else {
-                return builder.put(ClientResponse.class, data);
+                return builder.put(Entity.entity(data, MediaType.APPLICATION_JSON_TYPE), ClientResponse.class);
             }
         case DELETE:
-            return builder.delete(ClientResponse.class, data);
+            return builder.build("DELETE", Entity.entity(data, MediaType.APPLICATION_JSON_TYPE))
+                          .invoke(ClientResponse.class);
         default:
             throw new RuntimeException();
         }
@@ -198,7 +203,7 @@ public class BaseTest {
             MultivaluedMap<String, String> queryParams) throws JsonProcessingException, IOException {
         ClientResponse response = getResponse(responseType, url, queryParams);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        return mapper.readTree(response.getEntityInputStream());
+        return mapper.readTree(response.getEntityStream());
     }
 
     /**

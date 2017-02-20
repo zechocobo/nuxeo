@@ -39,7 +39,7 @@ public class RestClientTest {
 
         for (String[] expected : expectedTransformations) {
             HttpAutomationClient client = new HttpAutomationClient(expected[0]);
-            URI uri = client.getRestClient().service.getURI();
+            URI uri = client.getRestClient().service.getUri();
             assertEquals(expected[1], uri.toString());
         }
     }

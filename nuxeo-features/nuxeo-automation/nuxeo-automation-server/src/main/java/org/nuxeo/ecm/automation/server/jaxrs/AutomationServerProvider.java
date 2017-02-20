@@ -16,42 +16,18 @@
  */
 package org.nuxeo.ecm.automation.server.jaxrs;
 
-import java.lang.reflect.Type;
-
-import javax.ws.rs.core.Context;
-
+import org.glassfish.jersey.server.internal.inject.AbstractContainerRequestValueFactory;
 import org.nuxeo.ecm.automation.server.AutomationServer;
 import org.nuxeo.runtime.api.Framework;
 
-import com.sun.jersey.core.spi.component.ComponentContext;
-import com.sun.jersey.core.spi.component.ComponentScope;
-import com.sun.jersey.spi.inject.Injectable;
-import com.sun.jersey.spi.inject.InjectableProvider;
 /**
- *
- *
  * @since 8.10
  */
-public class AutomationServerProvider implements InjectableProvider<Context, Type>, Injectable<AutomationServer>{
+public class AutomationServerProvider extends AbstractContainerRequestValueFactory<AutomationServer> {
 
     @Override
-    public AutomationServer getValue() {
+    public AutomationServer provide() {
         return Framework.getService(AutomationServer.class);
     }
-
-    @Override
-    public ComponentScope getScope() {
-        return ComponentScope.PerRequest;
-    }
-
-    @Override
-    public Injectable<AutomationServer> getInjectable(ComponentContext ic, Context a, Type c) {
-        if (!c.equals(AutomationServer.class)) {
-            return null;
-        }
-        return this;
-    }
-
-
 
 }

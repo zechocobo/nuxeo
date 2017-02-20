@@ -25,9 +25,16 @@ import static org.junit.Assert.assertTrue;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,14 +51,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 
 /**
  * @since 5.7.2 - Test the Rest binding to run operations
@@ -165,14 +164,14 @@ public class OperationBindingTest extends BaseTest {
 
     @Test
     public void automationResourceIsAlsoAvailableBehindAPIRoot() throws Exception {
-        ClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
-        client.setConnectTimeout(TIMEOUT);
-        client.setReadTimeout(TIMEOUT);
-        client.addFilter(new HTTPBasicAuthFilter("Administrator", "Administrator"));
-        WebResource wr = client.resource("http://localhost:18090/api/v1/automation/doc");
+        Client client = ClientBuilder.newBuilder()
+                                     .property(ClientProperties.CONNECT_TIMEOUT, TIMEOUT)
+                                     .property(ClientProperties.READ_TIMEOUT, TIMEOUT)
+                                     .register(HttpAuthenticationFeature.basic("Administrator", "Administrator"))
+                                     .build();
+        WebTarget target = client.target("http://localhost:18090/api/v1/automation/doc");
 
-        Builder builder = wr.accept(MediaType.TEXT_HTML);
+        Invocation.Builder builder = target.request(MediaType.TEXT_HTML);
         ClientResponse response = builder.get(ClientResponse.class);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());

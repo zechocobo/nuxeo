@@ -18,8 +18,14 @@
  */
 package org.nuxeo.ecm.restapi.test;
 
-import com.sun.jersey.api.client.ClientResponse;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+
+import javax.ws.rs.core.Response;
+
 import org.codehaus.jackson.JsonNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.test.CoreFeature;
@@ -30,12 +36,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import javax.ws.rs.core.Response;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @since 8.4
@@ -84,7 +84,7 @@ public class OAuth2ObjectTest extends BaseTest {
     public void iCanGetAuthData() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, getProviderPath(TEST_OAUTH2_PROVIDER));
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals(TEST_OAUTH2_PROVIDER, node.get("serviceName").getTextValue());
         assertEquals(TEST_OAUTH2_CLIENTID, node.get("clientId").getTextValue());
         assertEquals(AUTHORIZATION_SERVER_URL + "?client_id=" + TEST_OAUTH2_CLIENTID +
@@ -98,7 +98,7 @@ public class OAuth2ObjectTest extends BaseTest {
     public void iCantGetAuthDataInvalidProvider() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, getProviderPath("fake"));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("Invalid provider: fake", getErrorMessage(node));
     }
 
@@ -106,7 +106,7 @@ public class OAuth2ObjectTest extends BaseTest {
     public void iCanGetToken() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, getTokenPath(TEST_OAUTH2_PROVIDER));
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals(TEST_OAUTH2_ACCESS_TOKEN, node.get("token").getTextValue());
     }
 
@@ -120,7 +120,7 @@ public class OAuth2ObjectTest extends BaseTest {
     public void iCantGetTokenInvalidProvider() throws IOException {
         ClientResponse response = getResponse(RequestType.GET, getTokenPath("fake"));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("Invalid provider: fake", getErrorMessage(node));
     }
 

@@ -34,11 +34,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.collections.api.CollectionManager;
@@ -50,7 +52,6 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.VersioningOption;
 import org.nuxeo.ecm.core.api.impl.blob.StringBlob;
-import org.nuxeo.ecm.core.blob.binary.BinaryBlob;
 import org.nuxeo.ecm.core.io.marshallers.json.document.ACPJsonWriter;
 import org.nuxeo.ecm.core.io.marshallers.json.enrichers.BasePermissionsJsonEnricher;
 import org.nuxeo.ecm.core.io.registry.MarshallingConstants;
@@ -69,9 +70,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 
 /**
  * Test the CRUD rest API
@@ -99,7 +97,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get a document
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEntityEqualsDoc(response.getEntityInputStream(), note);
+        assertEntityEqualsDoc(response.getEntityStream(), note);
 
     }
 
@@ -113,7 +111,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // The i get the document as Json
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEntityEqualsDoc(response.getEntityInputStream(), note);
+        assertEntityEqualsDoc(response.getEntityStream(), note);
 
     }
 
@@ -131,7 +129,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get the only document of the folder
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         Iterator<JsonNode> elements = node.get("entries").getElements();
         node = elements.next();
 
@@ -148,7 +146,7 @@ public class DocumentBrowsingTest extends BaseTest {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
         // When i do a PUT request on the document with modified data
-        JSONDocumentNode jsonDoc = new JSONDocumentNode(response.getEntityInputStream());
+        JSONDocumentNode jsonDoc = new JSONDocumentNode(response.getEntityStream());
         jsonDoc.setPropertyValue("dc:title", "New title");
         response = getResponse(RequestType.PUT, "id/" + note.getId(), jsonDoc.asJson());
 
@@ -210,14 +208,14 @@ public class DocumentBrowsingTest extends BaseTest {
         assertEquals("0.0", note.getVersionLabel());
 
         // When i do a PUT request on the document with modified version in the header
-        JSONDocumentNode jsonDoc = new JSONDocumentNode(response.getEntityInputStream());
+        JSONDocumentNode jsonDoc = new JSONDocumentNode(response.getEntityStream());
         Map<String, String> headers = new HashMap<>();
         headers.put(RestConstants.X_VERSIONING_OPTION, VersioningOption.MAJOR.toString());
         headers.put(HEADER_PREFIX + FETCH_PROPERTIES + "." + ENTITY_TYPE, "versionLabel");
         response = getResponse(RequestType.PUT, "id/" + note.getId(), jsonDoc.asJson(), headers);
 
         // Check if the version of the document has been returned
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("1.0", node.get("versionLabel").getValueAsText());
 
         // Check if the original document is still not versioned.
@@ -319,7 +317,7 @@ public class DocumentBrowsingTest extends BaseTest {
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
         // Then the create document is returned
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("My title", node.get("title").getValueAsText());
         assertEquals(" ", node.get("properties").get("dc:description").getTextValue());
         String id = node.get("uid").getValueAsText();
@@ -355,8 +353,8 @@ public class DocumentBrowsingTest extends BaseTest {
         DocumentModel doc = RestServerInit.getNote(0, session);
 
         // When I do a DELETE request
-        WebResource wr = service.path("path" + doc.getPathAsString());
-        ClientResponse response = wr.delete(ClientResponse.class);
+        WebTarget target = service.path("path" + doc.getPathAsString());
+        ClientResponse response = target.request().delete(ClientResponse.class);
         assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
 
         fetchInvalidations();
@@ -376,7 +374,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get a document
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEntityEqualsDoc(response.getEntityInputStream(), note);
+        assertEntityEqualsDoc(response.getEntityStream(), note);
 
         // When i do a GET Request on a non existent repository
         response = getResponse(RequestType.GET, "repo/nonexistentrepo/path" + note.getPathAsString());
@@ -397,7 +395,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get a the ACL
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals(ACPJsonWriter.ENTITY_TYPE, node.get("entity-type").getValueAsText());
 
     }
@@ -415,7 +413,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get a the ACL
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("inherited",
                 node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get("acls").get(0).get("name").getTextValue());
 
@@ -438,7 +436,7 @@ public class DocumentBrowsingTest extends BaseTest {
         // + file.getPathAsString(), headers);
         // Then i get an entry for thumbnail
         // assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        // JsonNode node = mapper.readTree(response.getEntityInputStream());
+        // JsonNode node = mapper.readTree(response.getEntityStream());
         // assertEquals("specificUrl", node.get(RestConstants
         // .CONTRIBUTOR_CTX_PARAMETERS).get("thumbnail").get
         // ("thumbnailUrl").getTextValue());
@@ -456,7 +454,7 @@ public class DocumentBrowsingTest extends BaseTest {
         // Then i get no result for valid thumbnail url as expected but still
         // thumbnail entry from the contributor
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertNotNull(node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get("thumbnail").get("url").getTextValue());
     }
 
@@ -480,7 +478,7 @@ public class DocumentBrowsingTest extends BaseTest {
         TransactionHelper.startTransaction();
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertFalse(node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get(FavoritesJsonEnricher.NAME).get(FavoritesJsonEnricher.IS_FAVORITE).getBooleanValue());
 
         FavoritesManager favoritesManager = Framework.getService(FavoritesManager.class);
@@ -493,7 +491,7 @@ public class DocumentBrowsingTest extends BaseTest {
                 "repo/" + note.getRepositoryName() + "/path" + note.getPathAsString(), headers);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        node = mapper.readTree(response.getEntityInputStream());
+        node = mapper.readTree(response.getEntityStream());
         assertTrue(node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get(FavoritesJsonEnricher.NAME).get(FavoritesJsonEnricher.IS_FAVORITE).getBooleanValue());
     }
 
@@ -517,7 +515,7 @@ public class DocumentBrowsingTest extends BaseTest {
         TransactionHelper.startTransaction();
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals(0, node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get(TagsJsonEnricher.NAME).size());
 
         TagService tagService = Framework.getService(TagService.class);
@@ -530,7 +528,7 @@ public class DocumentBrowsingTest extends BaseTest {
                 headers);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        node = mapper.readTree(response.getEntityInputStream());
+        node = mapper.readTree(response.getEntityStream());
         JsonNode tags = node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get(TagsJsonEnricher.NAME);
         if (tags.size() != 0) { // XXX NXP-17670 tags not implemented for MongoDB
             assertEquals(1, tags.size());
@@ -558,7 +556,7 @@ public class DocumentBrowsingTest extends BaseTest {
         TransactionHelper.startTransaction();
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals(0, ((ArrayNode) node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get(CollectionsJsonEnricher.NAME)).size());
         CollectionManager collectionManager = Framework.getService(CollectionManager.class);
         collectionManager.addToNewCollection("dummyCollection", null, note, session);
@@ -570,7 +568,7 @@ public class DocumentBrowsingTest extends BaseTest {
                 "repo/" + note.getRepositoryName() + "/path" + note.getPathAsString(), headers);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        node = mapper.readTree(response.getEntityInputStream());
+        node = mapper.readTree(response.getEntityStream());
         ArrayNode collections = (ArrayNode) node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get(CollectionsJsonEnricher.NAME);
         assertEquals(1, collections.size());
         assertEquals("dummyCollection", collections.get(0).get("title").getTextValue());
@@ -589,7 +587,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get a list of permissions
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         JsonNode permissions = node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get("permissions");
         assertNotNull(permissions);
         assertTrue(permissions.isArray());
@@ -608,7 +606,7 @@ public class DocumentBrowsingTest extends BaseTest {
 
         // Then i get a preview url
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         JsonNode preview = node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS).get("preview");
         assertNotNull(preview);
         StringUtils.endsWith(preview.get("url").getTextValue(), "/default/");
@@ -645,7 +643,7 @@ public class DocumentBrowsingTest extends BaseTest {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
         // When i do a PUT request on the document with modified data
-        JSONDocumentNode jsonDoc = new JSONDocumentNode(response.getEntityInputStream());
+        JSONDocumentNode jsonDoc = new JSONDocumentNode(response.getEntityStream());
         jsonDoc.setPropertyValue("dc:title", "New title");
         jsonDoc.setPropertyArray("dc:contributors", "system");
         response = getResponse(RequestType.PUT, "id/" + note.getId(), jsonDoc.asJson());

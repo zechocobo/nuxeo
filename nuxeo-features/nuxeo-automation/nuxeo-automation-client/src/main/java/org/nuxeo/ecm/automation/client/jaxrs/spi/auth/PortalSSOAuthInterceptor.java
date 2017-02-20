@@ -18,23 +18,21 @@
  */
 package org.nuxeo.ecm.automation.client.jaxrs.spi.auth;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
-import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.client.ClientRequestContext;
 
 import org.nuxeo.ecm.automation.client.jaxrs.spi.Connector;
 import org.nuxeo.ecm.automation.client.jaxrs.spi.Request;
 import org.nuxeo.ecm.automation.client.jaxrs.spi.RequestInterceptor;
 import org.nuxeo.ecm.automation.client.jaxrs.util.Base64;
-
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientRequest;
-import com.sun.jersey.api.client.ClientResponse;
 
 /**
  * @author matic
@@ -80,12 +78,10 @@ public class PortalSSOAuthInterceptor extends RequestInterceptor {
     }
 
     @Override
-    public ClientResponse handle(ClientRequest cr) throws ClientHandlerException {
-        Map<String, String> computedHeaders = computeHeaders();
-        MultivaluedMap<String, Object> headers = cr.getHeaders();
-        for (Map.Entry<String, String> entry : computedHeaders.entrySet()) {
-            headers.add(entry.getKey(), entry.getValue());
+    public void filter(ClientRequestContext requestContext) throws IOException {
+        for (Entry<String, String> entry : computeHeaders().entrySet()) {
+            requestContext.getHeaders().putSingle(entry.getKey(), entry.getValue());
         }
-        return getNext().handle(cr);
     }
+
 }

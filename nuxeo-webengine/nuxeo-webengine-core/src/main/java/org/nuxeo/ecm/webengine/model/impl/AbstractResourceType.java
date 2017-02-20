@@ -38,13 +38,10 @@ import org.nuxeo.ecm.webengine.model.Resource;
 import org.nuxeo.ecm.webengine.model.ResourceType;
 import org.nuxeo.ecm.webengine.model.TemplateNotFoundException;
 import org.nuxeo.ecm.webengine.model.TypeVisibility;
-import org.nuxeo.ecm.webengine.model.WebContext;
 import org.nuxeo.ecm.webengine.scripting.ScriptFile;
 import org.nuxeo.ecm.webengine.security.Guard;
 import org.nuxeo.ecm.webengine.security.PermissionService;
 import org.nuxeo.runtime.annotations.AnnotationManager;
-
-import com.sun.jersey.server.spi.component.ResourceComponentConstructor;
 
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
@@ -54,8 +51,6 @@ public abstract class AbstractResourceType implements ResourceType {
     protected final WebEngine engine;
 
     protected final Module owner;
-
-    protected final ResourceComponentConstructor constructor;
 
     protected final String name;
 
@@ -73,13 +68,12 @@ public abstract class AbstractResourceType implements ResourceType {
 
 
     protected AbstractResourceType(WebEngine engine, Module module, AbstractResourceType superType, String name,
-            ClassProxy clazz, ResourceComponentConstructor constructor, int visibility) {
+            ClassProxy clazz, int visibility) {
         this.engine = engine;
         owner = module;
         this.superType = superType;
         this.name = name;
         this.clazz = clazz;
-        this.constructor = constructor;
         this.visibility = visibility;
         templateCache = new ConcurrentHashMap<String, ScriptFile>();
         AnnotationManager mgr = engine.getAnnotationManager();
@@ -125,15 +119,6 @@ public abstract class AbstractResourceType implements ResourceType {
     @SuppressWarnings("unchecked")
     public Class<Resource> getResourceClass() {
         return (Class<Resource>) clazz.get();
-    }
-
-    @Override
-    public <T extends Resource> T newInstance(Class<T> typeof, WebContext context) {
-        try {
-            return typeof.cast(constructor.construct(context.getServerHttpContext()));
-        } catch (ReflectiveOperationException e) {
-            throw WebException.wrap("Failed to instantiate web object: " + clazz, e);
-        }
     }
 
     @Override

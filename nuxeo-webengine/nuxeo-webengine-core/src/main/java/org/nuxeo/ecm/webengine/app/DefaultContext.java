@@ -25,9 +25,6 @@ import javax.ws.rs.core.UriInfo;
 
 import org.nuxeo.ecm.webengine.model.impl.AbstractWebContext;
 
-import com.sun.jersey.api.core.HttpContext;
-import com.sun.jersey.server.impl.inject.ServerInjectableProviderContext;
-
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
@@ -38,37 +35,25 @@ public class DefaultContext extends AbstractWebContext {
 
     protected HttpHeaders headers;
 
-    protected ServerInjectableProviderContext sic;
-
-    protected HttpContext hc;
-
     public DefaultContext(HttpServletRequest request, HttpServletResponse response) {
         super(request, response);
     }
 
     @Override
     public HttpHeaders getHttpHeaders() {
-        return hc.getRequest();
+//        return hc.getRequest();
+        return null;
     }
 
     @Override
     public UriInfo getUriInfo() {
-        return hc.getUriInfo();
+//        return hc.getUriInfo();
+        return info;
     }
 
-    @Override
-    public HttpContext getServerHttpContext() {
-        return hc;
-    }
-
-    @Override
-    public ServerInjectableProviderContext getServerInjectableProviderContext() {
-        return sic;
-    }
-
-    public void setJerseyContext(ServerInjectableProviderContext sic, HttpContext hc) {
-        this.sic = sic;
-        this.hc = hc;
+    // TODO find a better way (make context injectable ?)
+    public void setUriInfo(UriInfo info) {
+        this.info = info;
     }
 
 }

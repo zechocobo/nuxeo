@@ -41,6 +41,7 @@ import javax.script.ScriptException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.ResourceContext;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -110,6 +111,8 @@ public abstract class AbstractWebContext implements WebContext {
     protected String basePath;
 
     private String repoName;
+
+    protected ResourceContext resourceContext;
 
     protected AbstractWebContext(HttpServletRequest request, HttpServletResponse response) {
         engine = Framework.getLocalService(WebEngine.class);
@@ -327,10 +330,15 @@ public abstract class AbstractWebContext implements WebContext {
 
     @Override
     public Resource newObject(ResourceType type, Object... args) {
-        Resource obj = type.newInstance(type.getResourceClass(), this);
+        Class<? extends Resource> clazz = type.getResourceClass();
+        Resource obj = null;
         try {
+            obj = resourceContext.getResource(clazz);
+
             obj.initialize(this, type, args);
-        }  finally {
+//        } catch (ReflectiveOperationException e) {
+//            throw WebException.wrap("Failed to instantiate web object: " + clazz, e);
+        } finally {
             // we must be sure the object is pushed even if an error occurred
             // otherwise we may end up with an empty object stack and we will
             // not be able to
@@ -781,6 +789,10 @@ public abstract class AbstractWebContext implements WebContext {
         } else {
             throw new IllegalArgumentException("Repository " + repoName + " not found");
         }
-
     }
+
+    public void setResourceContext(ResourceContext resourceContext) {
+        this.resourceContext = resourceContext;
+    }
+
 }

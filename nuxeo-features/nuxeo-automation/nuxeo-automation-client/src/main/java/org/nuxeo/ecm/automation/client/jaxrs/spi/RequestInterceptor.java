@@ -18,13 +18,10 @@
  */
 package org.nuxeo.ecm.automation.client.jaxrs.spi;
 
+import javax.ws.rs.client.ClientRequestFilter;
+
 import org.nuxeo.ecm.automation.client.jaxrs.spi.auth.BasicAuthInterceptor;
 import org.nuxeo.ecm.automation.client.jaxrs.spi.auth.PortalSSOAuthInterceptor;
-
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientRequest;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.filter.ClientFilter;
 
 /**
  * Provide a way of intercepting requests before they are sent server side. Authentication headers are injected this
@@ -33,12 +30,8 @@ import com.sun.jersey.api.client.filter.ClientFilter;
  * @see BasicAuthInterceptor
  * @see PortalSSOAuthInterceptor
  */
-public abstract class RequestInterceptor extends ClientFilter {
+public abstract class RequestInterceptor implements ClientRequestFilter {
 
     public abstract void processRequest(Request request, Connector connector);
 
-    @Override
-    public ClientResponse handle(ClientRequest cr) throws ClientHandlerException {
-        return getNext().handle(cr);
-    }
 }

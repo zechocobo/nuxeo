@@ -18,43 +18,22 @@
  */
 package org.nuxeo.ecm.automation.jaxrs;
 
-import java.lang.reflect.Type;
-
-import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 import org.codehaus.jackson.JsonFactory;
+import org.glassfish.jersey.server.internal.inject.AbstractContainerRequestValueFactory;
 import org.nuxeo.ecm.webengine.JsonFactoryManager;
 import org.nuxeo.runtime.api.Framework;
-
-import com.sun.jersey.core.spi.component.ComponentContext;
-import com.sun.jersey.core.spi.component.ComponentScope;
-import com.sun.jersey.spi.inject.Injectable;
-import com.sun.jersey.spi.inject.InjectableProvider;
 
 /**
  * @since 5.7.3
  */
 @Provider
-public class JsonFactoryProvider implements InjectableProvider<Context, Type>, Injectable<JsonFactory> {
+public class JsonFactoryProvider extends AbstractContainerRequestValueFactory<JsonFactory> {
 
     @Override
-    public JsonFactory getValue() {
-        return Framework.getLocalService(JsonFactoryManager.class).getJsonFactory();
-    }
-
-    @Override
-    public Injectable<JsonFactory> getInjectable(ComponentContext arg0, Context arg1, Type t) {
-        if (t.equals(JsonFactory.class)) {
-            return this;
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public ComponentScope getScope() {
-        return ComponentScope.Singleton;
+    public JsonFactory provide() {
+        return Framework.getService(JsonFactoryManager.class).getJsonFactory();
     }
 
 }

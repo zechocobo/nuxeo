@@ -22,12 +22,11 @@ package org.nuxeo.ecm.automation.client.rest.api;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.impl.client.BasicCookieStore;
-import org.nuxeo.ecm.automation.client.jaxrs.impl.HttpAutomationClient;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.client.apache4.ApacheHttpClient4;
-import com.sun.jersey.client.apache4.ApacheHttpClient4Handler;
+import org.nuxeo.ecm.automation.client.jaxrs.impl.HttpAutomationClient;
 
 /**
  * REST client used to to requests on the Nuxeo REST API.
@@ -43,20 +42,22 @@ public class RestClient {
 
     protected static final String API_PATH = "/api/v1";
 
-    WebResource service;
+    WebTarget service;
 
     public RestClient(HttpAutomationClient httpAutomationClient) {
-        ApacheHttpClient4Handler handler = new ApacheHttpClient4Handler(httpAutomationClient.http(),
-                new BasicCookieStore(), false);
-        ApacheHttpClient4 client = new ApacheHttpClient4(handler);
+        Client client = ClientBuilder.newBuilder().build();
+        // TODO No easy way found to use apache client in jersey - we can use apache but not provide a http client
+//        ApacheHttpClient4Handler handler = new ApacheHttpClient4Handler(httpAutomationClient.http(),
+//                new BasicCookieStore(), false);
+//        ApacheHttpClient4 client = new ApacheHttpClient4(handler);
 
         if (httpAutomationClient.getRequestInterceptor() != null) {
-            client.addFilter(httpAutomationClient.getRequestInterceptor());
+            client.register(httpAutomationClient.getRequestInterceptor());
         }
 
         String apiURL = httpAutomationClient.getBaseUrl();
         apiURL = replaceAutomationEndpoint(apiURL);
-        service = client.resource(apiURL);
+        service = client.target(apiURL);
     }
 
     private String replaceAutomationEndpoint(String url) {

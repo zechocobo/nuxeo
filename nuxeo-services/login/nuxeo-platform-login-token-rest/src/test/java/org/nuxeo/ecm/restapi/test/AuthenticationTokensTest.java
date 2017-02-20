@@ -30,10 +30,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.test.CoreFeature;
@@ -43,9 +45,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * @since 8.3
@@ -67,7 +66,7 @@ public class AuthenticationTokensTest extends BaseTest {
         // Check empty token list
         ClientResponse response = getResponse(RequestType.GET, "/token");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals(0, getEntries("tokens", node).size());
 
         // acquire some tokens
@@ -107,13 +106,13 @@ public class AuthenticationTokensTest extends BaseTest {
     @Test
     public void itCanCreateTokens() throws Exception {
         // acquire a token
-        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.put("application", Collections.singletonList("app"));
         params.put("deviceId", Collections.singletonList("device"));
         params.put("permission", Collections.singletonList("rw"));
         ClientResponse response = getResponse(RequestType.POST, "/token", null, params, null, null);
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-        String tokenId = response.getEntity(String.class);
+        String tokenId = (String) response.getEntity();
         assertFalse(tokenId.isEmpty());
 
         // check tokens for current user
@@ -132,7 +131,7 @@ public class AuthenticationTokensTest extends BaseTest {
     }
 
     private List<JsonNode> getTokens(String application) throws IOException {
-        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         if (application != null) {
             params.put("application", Collections.singletonList(application));
         }

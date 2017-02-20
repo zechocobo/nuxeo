@@ -26,9 +26,14 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.Serializable;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.codehaus.jackson.JsonNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.Blob;
@@ -44,9 +49,6 @@ import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import com.google.inject.Inject;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * @since 7.3
@@ -69,7 +71,7 @@ public class ConverterTest extends BaseTest {
     protected void doSynchronousConversion(String paramName, String paramValue, boolean convertDocument) {
         DocumentModel doc = createDummyDocument();
 
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.putSingle(paramName, paramValue);
         String path = "path" + doc.getPathAsString() + "/";
         if (!convertDocument) {
@@ -113,14 +115,15 @@ public class ConverterTest extends BaseTest {
     public void doAsynchronousConversion(String paramName, String paramValue) throws IOException {
         DocumentModel doc = createDummyDocument();
 
-        MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         formData.add(paramName, paramValue);
         formData.add("async", "true");
-        WebResource wr = service.path("path" + doc.getPathAsString() + "/@convert");
-        ClientResponse response = wr.getRequestBuilder().post(ClientResponse.class, formData);
+        WebTarget target = service.path("path" + doc.getPathAsString() + "/@convert");
+        ClientResponse response = target.request().post(Entity.entity(formData, MediaType.MULTIPART_FORM_DATA_TYPE),
+                ClientResponse.class);
 
         assertEquals(202, response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertNotNull(node);
         assertEquals("conversionScheduled", node.get("entity-type").getTextValue());
         String id = node.get("conversionId").getTextValue();
@@ -132,10 +135,10 @@ public class ConverterTest extends BaseTest {
         String computedResultURL = String.format("http://localhost:18090/api/v1/conversions/%s/result", id);
         assertEquals(computedResultURL, resultURL);
 
-        wr = client.resource(pollingURL);
-        response = wr.get(ClientResponse.class);
+        target = client.target(pollingURL);
+        response = target.request().get(ClientResponse.class);
         assertEquals(200, response.getStatus());
-        node = mapper.readTree(response.getEntityInputStream());
+        node = mapper.readTree(response.getEntityStream());
         assertNotNull(node);
         assertEquals("conversionStatus", node.get("entity-type").getTextValue());
         id = node.get("conversionId").getTextValue();
@@ -149,16 +152,16 @@ public class ConverterTest extends BaseTest {
         eventService.waitForAsyncCompletion();
 
         // polling URL should redirect to the result URL when done
-        wr = client.resource(pollingURL);
-        response = wr.get(ClientResponse.class);
+        target = client.target(pollingURL);
+        response = target.request().get(ClientResponse.class);
         assertEquals(200, response.getStatus());
-        node = mapper.readTree(response.getEntityInputStream());
+        node = mapper.readTree(response.getEntityStream());
         resultURL = node.get("resultURL").getTextValue();
         assertEquals(computedResultURL, resultURL);
 
         // retrieve the converted blob
-        wr = client.resource(resultURL);
-        response = wr.get(ClientResponse.class);
+        target = client.target(resultURL);
+        response = target.request().get(ClientResponse.class);
         assertEquals(200, response.getStatus());
     }
 
@@ -176,10 +179,11 @@ public class ConverterTest extends BaseTest {
     public void shouldAllowSynchronousConversionUsingPOST() {
         DocumentModel doc = createDummyDocument();
 
-        MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         formData.add("converter", "any2pdf");
-        WebResource wr = service.path("path" + doc.getPathAsString() + "/@convert");
-        ClientResponse response = wr.getRequestBuilder().post(ClientResponse.class, formData);
+        WebTarget target = service.path("path" + doc.getPathAsString() + "/@convert");
+        ClientResponse response = target.request().post(Entity.entity(formData, MediaType.MULTIPART_FORM_DATA_TYPE),
+                ClientResponse.class);
         assertEquals(200, response.getStatus());
     }
 

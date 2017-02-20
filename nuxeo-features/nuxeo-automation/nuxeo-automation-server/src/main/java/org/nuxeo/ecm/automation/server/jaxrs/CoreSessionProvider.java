@@ -16,42 +16,18 @@
  */
 package org.nuxeo.ecm.automation.server.jaxrs;
 
-import java.lang.reflect.Type;
-
-import javax.ws.rs.core.Context;
-
+import org.glassfish.jersey.server.internal.inject.AbstractContainerRequestValueFactory;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.webengine.jaxrs.session.SessionFactory;
 
-import com.sun.jersey.core.spi.component.ComponentContext;
-import com.sun.jersey.core.spi.component.ComponentScope;
-import com.sun.jersey.spi.inject.Injectable;
-import com.sun.jersey.spi.inject.InjectableProvider;
 /**
- *
- *
  * @since 8.10
  */
-public class CoreSessionProvider implements InjectableProvider<Context, Type>, Injectable<CoreSession>{
+public class CoreSessionProvider extends AbstractContainerRequestValueFactory<CoreSession> {
 
     @Override
-    public CoreSession getValue() {
+    public CoreSession provide() {
         return SessionFactory.getSession();
     }
-
-    @Override
-    public ComponentScope getScope() {
-        return ComponentScope.PerRequest;
-    }
-
-    @Override
-    public Injectable<CoreSession> getInjectable(ComponentContext ic, Context a, Type c) {
-        if (!c.equals(CoreSession.class)) {
-            return null;
-        }
-        return this;
-    }
-
-
 
 }

@@ -32,6 +32,10 @@ import javax.inject.Inject;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.io.IOUtils;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,11 +52,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.multipart.BodyPart;
-import com.sun.jersey.multipart.FormDataMultiPart;
-import com.sun.jersey.multipart.file.StreamDataBodyPart;
 
 /**
  * @since 5.8
@@ -86,7 +85,7 @@ public class MultiBlobAccessTest extends BaseTest {
         Map<String, String> headers = new HashMap<>();
         headers.put("properties", "multiblob");
         ClientResponse response = getResponse(RequestType.GET, "path" + doc.getPathAsString(), headers);
-        String docJsonIN = IOUtils.toString(response.getEntityInputStream());
+        String docJsonIN = IOUtils.toString(response.getEntityStream());
         response = getResponse(RequestType.PUT, "path" + doc.getPathAsString(), docJsonIN, headers);
         DocumentModel doc = session.getDocument(new PathRef("/testBlob"));
         assertEquals(2, ((List<?>) doc.getProperty("mb:blobs").getValue()).size());
@@ -106,12 +105,12 @@ public class MultiBlobAccessTest extends BaseTest {
 
         // Then i receive the content of the blob
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("one", response.getEntity(String.class));
+        assertEquals("one", response.getEntity());
 
         response = getResponse(RequestType.GET, "path" + doc.getPathAsString() + "/@blob/mb:blobs/1/content");
 
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("two", response.getEntity(String.class));
+        assertEquals("two", response.getEntity());
 
     }
 
@@ -174,17 +173,17 @@ public class MultiBlobAccessTest extends BaseTest {
 
         // Then i receive the content of the blob
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("main", response.getEntity(String.class));
+        assertEquals("main", response.getEntity());
 
         response = getResponse(RequestType.GET, "path" + doc.getPathAsString() + "/@blob/blobholder:1");
 
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("one", response.getEntity(String.class));
+        assertEquals("one", response.getEntity());
 
         response = getResponse(RequestType.GET, "path" + doc.getPathAsString() + "/@blob/blobholder:2");
 
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("two", response.getEntity(String.class));
+        assertEquals("two", response.getEntity());
     }
 
 }

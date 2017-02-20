@@ -29,16 +29,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.client.ClientResponse;
 import org.nuxeo.ecm.automation.client.AutomationException;
 import org.nuxeo.ecm.automation.client.Constants;
-
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * A REST request on Nuxeo REST API.
@@ -47,7 +50,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
  */
 public class RestRequest {
 
-    protected final WebResource service;
+    protected final WebTarget service;
 
     protected final String path;
 
@@ -61,9 +64,9 @@ public class RestRequest {
 
     protected Map<String, Object> headers = new HashMap<String, Object>();
 
-    protected MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+    protected MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
 
-    public RestRequest(WebResource service, String path) {
+    public RestRequest(WebTarget service, String path) {
         this.service = service;
         this.path = path;
     }
@@ -142,16 +145,18 @@ public class RestRequest {
     }
 
     public RestResponse execute() {
-        WebResource wr = service;
+        WebTarget target = service;
         if (!StringUtils.isBlank(repositoryName)) {
-            wr = wr.path("repo").path(repositoryName);
+            target = target.path("repo").path(repositoryName);
         }
-        wr = wr.path(path);
+        target = target.path(path);
         if (queryParams != null && !queryParams.isEmpty()) {
-            wr = wr.queryParams(queryParams);
+            for (Entry<String, List<String>> entry : queryParams.entrySet()) {
+                target = target.queryParam(entry.getKey(), entry.getValue().toArray(new String[0]));
+            }
         }
 
-        WebResource.Builder builder = wr.accept(APPLICATION_JSON);
+        Invocation.Builder builder = target.request(APPLICATION_JSON);
         for (Map.Entry<String, Object> header : headers.entrySet()) {
             builder.header(header.getKey(), header.getValue());
         }
@@ -174,13 +179,14 @@ public class RestRequest {
             break;
         case POST:
         case POSTREQUEST:
-            response = builder.post(ClientResponse.class, data);
+            response = builder.post(Entity.entity(data, MediaType.APPLICATION_JSON), ClientResponse.class);
             break;
         case PUT:
-            response = builder.put(ClientResponse.class, data);
+            response = builder.put(Entity.entity(data, MediaType.APPLICATION_JSON), ClientResponse.class);
             break;
         case DELETE:
-            response = builder.delete(ClientResponse.class, data);
+            response = builder.build("DELETE", Entity.entity(data, MediaType.APPLICATION_JSON))
+                              .invoke(ClientResponse.class);
             break;
         default:
             throw new AutomationException();

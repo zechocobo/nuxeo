@@ -18,7 +18,10 @@
  */
 package org.nuxeo.ecm.platform.oauth.tests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ecm.platform.ui.web.auth.oauth2.NuxeoOAuth2Filter.ERRORS;
 
 import java.io.IOException;
@@ -27,9 +30,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,10 +49,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * @author <a href="mailto:ak@nuxeo.com">Arnaud Kervern</a>
@@ -84,10 +87,11 @@ public class TestOauth2Challenge {
         }
 
         // First client to request like a "Client" as OAuth RFC describe it
-        client = Client.create();
-        client.setConnectTimeout(TIMEOUT);
-        client.setReadTimeout(TIMEOUT);
-        client.setFollowRedirects(Boolean.FALSE);
+        client = ClientBuilder.newBuilder()
+                              .property(ClientProperties.CONNECT_TIMEOUT, TIMEOUT)
+                              .property(ClientProperties.READ_TIMEOUT, TIMEOUT)
+                              .property(ClientProperties.FOLLOW_REDIRECTS, Boolean.FALSE)
+                              .build();
 
         TestAuthorizationRequest.getRequests().clear();
     }
@@ -136,7 +140,7 @@ public class TestOauth2Challenge {
 
         ClientResponse cr = responseFromTokenWith(params);
         assertEquals(200, cr.getStatus());
-        String json = cr.getEntity(String.class);
+        String json = (String) cr.getEntity();
 
         ObjectMapper obj = new ObjectMapper();
 
@@ -152,37 +156,34 @@ public class TestOauth2Challenge {
         cr = responseFromTokenWith(params);
         assertEquals(200, cr.getStatus());
 
-        json = cr.getEntity(String.class);
+        json = (String) cr.getEntity();
         Map<?, ?> refreshed = obj.readValue(json, Map.class);
 
         assertNotSame(refreshed.get("access_token"), token.get("access_token"));
     }
 
     protected ClientResponse responseFromTokenWith(Map<String, String> queryParams) {
-        WebResource wr = client.resource(BASE_URL).path("oauth2").path("token");
+        WebTarget target = client.target(BASE_URL).path("oauth2").path("token");
 
-        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            params.add(entry.getKey(), entry.getValue());
+            target = target.queryParam(entry.getKey(), entry.getValue());
         }
 
-        return wr.queryParams(params).get(ClientResponse.class);
+        return target.request().get(ClientResponse.class);
     }
 
     protected ClientResponse responseFromAuthorizationWith(Map<String, String> queryParams) {
-        WebResource wr = client.resource(BASE_URL).path("oauth2").path("authorization");
+        WebTarget target = client.target(BASE_URL).path("oauth2").path("authorization");
 
-        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            params.add(entry.getKey(), entry.getValue());
+            target = target.queryParam(entry.getKey(), entry.getValue());
         }
 
-        return wr.queryParams(params).get(ClientResponse.class);
+        return target.request().get(ClientResponse.class);
     }
 
     protected ClientResponse responseFromUrl(String url, String accessToken) {
-        WebResource wr = client.resource(BASE_URL).path(url);
-        wr.header("Authentication", "Bearer " + accessToken);
-        return wr.get(ClientResponse.class);
+        WebTarget target = client.target(BASE_URL).path(url);
+        return target.request().header("Authentication", "Bearer " + accessToken).get(ClientResponse.class);
     }
 }

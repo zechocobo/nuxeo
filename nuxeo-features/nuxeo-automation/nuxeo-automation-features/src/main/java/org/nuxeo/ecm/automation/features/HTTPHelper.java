@@ -26,28 +26,32 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.sun.jersey.core.util.Base64;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.media.multipart.MultiPart;
+import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.nuxeo.ecm.automation.context.ContextHelper;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.impl.blob.StringBlob;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.multipart.MultiPart;
-import com.sun.jersey.multipart.impl.MultiPartWriter;
 
 /**
  * @since 7.3
@@ -96,24 +100,26 @@ public class HTTPHelper implements ContextHelper {
 
     public Blob call(String username, String password, String requestType, String url, Object data,
             MultivaluedMap<String, String> queryParams, MultiPart mp, Map<String, String> headers) throws IOException {
-        ClientConfig config = new DefaultClientConfig();
-        config.getClasses().add(MultiPartWriter.class);
-        Client client = Client.create(config);
-        client.setConnectTimeout(TIMEOUT);
-        client.setReadTimeout(TIMEOUT);
+        Client client = ClientBuilder.newBuilder()
+                                     .register(MultiPartWriter.class)
+                                     .property(ClientProperties.CONNECT_TIMEOUT, TIMEOUT)
+                                     .property(ClientProperties.READ_TIMEOUT, TIMEOUT)
+                                     .build();
         if (username != null && password != null) {
-            client.addFilter(new HTTPBasicAuthFilter(username, password));
+            Feature feature = HttpAuthenticationFeature.basic(username, password);
+            client.register(feature);
         }
 
-        WebResource wr = client.resource(url);
+        WebTarget target = client.target(url);
 
         if (queryParams != null && !queryParams.isEmpty()) {
-            wr = wr.queryParams(queryParams);
+            for (Entry<String, List<String>> entry : queryParams.entrySet()) {
+                target = target.queryParam(entry.getKey(), entry.getValue().toArray(new String[0]));
+            }
         }
-        WebResource.Builder builder;
-        builder = wr.accept(MediaType.APPLICATION_JSON);
+        Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
         if (mp != null) {
-            builder = wr.type(MediaType.MULTIPART_FORM_DATA_TYPE);
+            builder = target.request(MediaType.MULTIPART_FORM_DATA_TYPE);
         }
 
         // Adding some headers if needed
@@ -131,20 +137,22 @@ public class HTTPHelper implements ContextHelper {
                 break;
             case "POST":
                 if (mp != null) {
-                    response = builder.post(ClientResponse.class, mp);
+                    response = builder.post(Entity.entity(mp, MediaType.MULTIPART_FORM_DATA_TYPE),
+                            ClientResponse.class);
                 } else {
-                    response = builder.post(ClientResponse.class, data);
+                    response = builder.post(Entity.entity(data, MediaType.APPLICATION_JSON_TYPE), ClientResponse.class);
                 }
                 break;
             case "PUT":
                 if (mp != null) {
-                    response = builder.put(ClientResponse.class, mp);
+                    response = builder.put(Entity.entity(mp, MediaType.MULTIPART_FORM_DATA_TYPE), ClientResponse.class);
                 } else {
-                    response = builder.put(ClientResponse.class, data);
+                    response = builder.put(Entity.entity(data, MediaType.APPLICATION_JSON_TYPE), ClientResponse.class);
                 }
                 break;
             case "DELETE":
-                response = builder.delete(ClientResponse.class, data);
+                response = builder.build("DELETE", Entity.entity(data, MediaType.APPLICATION_JSON_TYPE))
+                                  .invoke(ClientResponse.class);
                 break;
             default:
                 break;
@@ -153,7 +161,7 @@ public class HTTPHelper implements ContextHelper {
             throw new RuntimeException(e);
         }
         if (response != null && response.getStatus() >= 200 && response.getStatus() < 300) {
-            return Blobs.createBlob(response.getEntityInputStream());
+            return Blobs.createBlob(response.getEntityStream());
         } else {
             return new StringBlob(response.getStatusInfo() != null ? response.getStatusInfo().toString() : "error");
         }
@@ -206,20 +214,22 @@ public class HTTPHelper implements ContextHelper {
         MultivaluedMap<String, String> queryParams = getQueryParameters(options);
         Map<String, String> headers = getHeaderParameters(options);
 
-        ClientConfig config = new DefaultClientConfig();
-        config.getClasses().add(MultiPartWriter.class);
-        Client client = Client.create(config);
-        client.setConnectTimeout(TIMEOUT);
+        Client client = ClientBuilder.newBuilder()
+                                     .register(MultiPartWriter.class)
+                                     .property(ClientProperties.CONNECT_TIMEOUT, TIMEOUT)
+                                     .build();
 
-        WebResource wr = client.resource(url);
+        WebTarget target = client.target(url);
 
         if (queryParams != null && !queryParams.isEmpty()) {
-            wr = wr.queryParams(queryParams);
+            for (Entry<String, List<String>> entry : queryParams.entrySet()) {
+                target = target.queryParam(entry.getKey(), entry.getValue().toArray(new String[0]));
+            }
         }
-        WebResource.Builder builder;
-        builder = wr.accept(MediaType.APPLICATION_JSON);
+        Invocation.Builder builder;
+        builder = target.request(MediaType.APPLICATION_JSON_TYPE);
         if (multipart != null) {
-            builder = wr.type(MediaType.MULTIPART_FORM_DATA_TYPE);
+            builder = target.request(MediaType.MULTIPART_FORM_DATA_TYPE);
         }
 
         // Adding some headers if needed
@@ -237,20 +247,23 @@ public class HTTPHelper implements ContextHelper {
                 break;
             case "POST":
                 if (multipart != null) {
-                    response = builder.post(ClientResponse.class, multipart);
+                    response = builder.post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA_TYPE),
+                            ClientResponse.class);
                 } else {
-                    response = builder.post(ClientResponse.class, data);
+                    response = builder.post(Entity.entity(data, MediaType.APPLICATION_JSON_TYPE), ClientResponse.class);
                 }
                 break;
             case "PUT":
                 if (multipart != null) {
-                    response = builder.put(ClientResponse.class, multipart);
+                    response = builder.put(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA_TYPE),
+                            ClientResponse.class);
                 } else {
-                    response = builder.put(ClientResponse.class, data);
+                    response = builder.put(Entity.entity(data, MediaType.APPLICATION_JSON_TYPE), ClientResponse.class);
                 }
                 break;
             case "DELETE":
-                response = builder.delete(ClientResponse.class, data);
+                response = builder.build("DELETE", Entity.entity(data, MediaType.APPLICATION_JSON_TYPE))
+                                  .invoke(ClientResponse.class);
                 break;
             default:
                 break;
@@ -297,7 +310,7 @@ public class HTTPHelper implements ContextHelper {
         if (options != null) {
             Map<String, List<String>> params = (Map<String, List<String>>) options.get("params");
             if (params != null) {
-                MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+                MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
                 for (String key : params.keySet()) {
                     queryParams.put(key, params.get(key));
                 }
@@ -323,7 +336,7 @@ public class HTTPHelper implements ContextHelper {
             filename = url.substring(url.lastIndexOf("/") + 1, url.length());
         }
 
-        Blob resultBlob = Blobs.createBlob(response.getEntityInputStream());
+        Blob resultBlob = Blobs.createBlob(response.getEntityStream());
         if (!StringUtils.isEmpty(filename)) {
             resultBlob.setFilename(filename);
         }
@@ -333,7 +346,7 @@ public class HTTPHelper implements ContextHelper {
             resultBlob.setEncoding(encoding);
         }
 
-        MediaType contentType = response.getType();
+        MediaType contentType = response.getMediaType();
         if (contentType != null) {
             resultBlob.setMimeType(contentType.getType());
         }

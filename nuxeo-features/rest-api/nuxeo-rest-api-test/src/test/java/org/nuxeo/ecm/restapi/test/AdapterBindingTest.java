@@ -22,12 +22,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.automation.test.adapter.BusinessBeanAdapter;
@@ -40,8 +42,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * @since 5.7.2
@@ -64,7 +64,7 @@ public class AdapterBindingTest extends BaseTest {
 
         // Then i receive a formatted response
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
         assertEquals("BusinessBeanAdapter", node.get("entity-type").getValueAsText());
         assertEquals(note.getPropertyValue("note:note"), node.get("value").get("note").getValueAsText());
 
@@ -135,7 +135,7 @@ public class AdapterBindingTest extends BaseTest {
         // Given a folder
         DocumentModel folder = RestServerInit.getFolder(1, session);
 
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
         queryParams.putSingle("currentPageIndex", "1");
         queryParams.putSingle("pageSize", "2");
         queryParams.putSingle("sortBy", "dc:title");

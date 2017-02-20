@@ -21,6 +21,7 @@ package org.nuxeo.ecm.restapi.test;
 
 import static org.junit.Assert.assertEquals;
 
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -32,8 +33,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.sun.jersey.api.client.ClientResponse;
 
 /**
  * @since 7.2
@@ -56,7 +55,7 @@ public class RenditionTest extends BaseTest {
         ClientResponse response = getResponse(RequestType.GET, "path" + doc.getPathAsString()
                 + "/@rendition/dummyRendition");
         assertEquals(200, response.getStatus());
-        assertEquals("adoc", response.getEntity(String.class));
+        assertEquals("adoc", response.getEntity());
     }
 
     @Test

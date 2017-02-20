@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -40,8 +41,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-
-import com.sun.jersey.api.client.ClientResponse;
 
 /**
  * Test the CRUD rest API
@@ -142,14 +141,14 @@ public class DocumentValidationTest extends BaseTest {
         doc.getProperty("userRefs").addValue("user:Administrator");
         doc = session.createDocument(doc);
         fetchInvalidations();
-        ClientResponse response = service.path("path/doc1").queryParam("embed", "*").header(EMBED_PROPERTIES,
+        ClientResponse response = service.path("path/doc1").queryParam("embed", "*").request().header(EMBED_PROPERTIES,
                 WILDCARD_VALUE).get(ClientResponse.class);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        IOUtils.copy(response.getEntityInputStream(), System.out);
+        IOUtils.copy(response.getEntityStream(), System.out);
     }
 
     private void checkResponseHasErrors(ClientResponse response) throws IOException, JsonProcessingException {
-        String responseText = IOUtils.toString(response.getEntityInputStream());
+        String responseText = IOUtils.toString(response.getEntityStream());
         // System.out.println(responseText);
         JsonNode node = mapper.readTree(responseText);
         assertTrue(node.get("has_error").getValueAsBoolean());

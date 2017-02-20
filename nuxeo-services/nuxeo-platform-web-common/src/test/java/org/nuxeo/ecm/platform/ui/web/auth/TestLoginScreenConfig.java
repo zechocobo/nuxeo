@@ -37,6 +37,7 @@ import java.util.Properties;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.glassfish.jersey.uri.UriComponent;
 import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.platform.ui.web.auth.service.LoginScreenConfig;
@@ -45,8 +46,6 @@ import org.nuxeo.ecm.platform.ui.web.auth.service.LoginVideo;
 import org.nuxeo.ecm.platform.ui.web.auth.service.PluggableAuthenticationService;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.NXRuntimeTestCase;
-
-import com.sun.jersey.api.uri.UriComponent;
 
 public class TestLoginScreenConfig extends NXRuntimeTestCase {
 

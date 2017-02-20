@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 
 import org.codehaus.jackson.JsonNode;
+import org.glassfish.jersey.client.ClientResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -36,8 +37,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.Jetty;
-
-import com.sun.jersey.api.client.ClientResponse;
 
 @RunWith(FeaturesRunner.class)
 @Features({ RestServerFeature.class })
@@ -53,7 +52,7 @@ public class ExceptionRestTest extends BaseTest {
         // When i do a wrong GET Request
         ClientResponse response = getResponse(RequestType.GET, "wrongpath" + note.getPathAsString());
 
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
 
         // Then i get an exception and parse it to check json payload
         assertEquals("exception", node.get("entity-type").getTextValue());
@@ -73,7 +72,7 @@ public class ExceptionRestTest extends BaseTest {
         // When I do a request with a wrong document ID
         ClientResponse response = getResponse(RequestType.GET, "path" + "/wrongID");
 
-        JsonNode node = mapper.readTree(response.getEntityInputStream());
+        JsonNode node = mapper.readTree(response.getEntityStream());
 
         // Then i get an exception and parse it to check json payload
         assertEquals("exception", node.get("entity-type").getTextValue());
