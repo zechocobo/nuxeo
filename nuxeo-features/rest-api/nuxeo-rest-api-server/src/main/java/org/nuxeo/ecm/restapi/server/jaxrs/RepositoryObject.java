@@ -55,7 +55,7 @@ public class RepositoryObject extends DefaultObject {
         return ctx.newAdapter(newObject("Document", rootDocument), adapterName);
     }
 
-    @Path("path{docPath:(/(?:(?!/@).)*)}")
+    @Path("path{docPath:(/(?:(?!/[@%40]).)*)}")
     public Object getDocsByPath(@PathParam("docPath") String docPath) {
         CoreSession session = getContext().getCoreSession();
         DocumentModel doc = session.getDocument(new PathRef(docPath));

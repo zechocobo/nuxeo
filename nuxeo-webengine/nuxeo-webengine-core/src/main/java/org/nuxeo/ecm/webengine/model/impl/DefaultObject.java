@@ -44,4 +44,9 @@ public class DefaultObject extends AbstractResource<ResourceTypeImpl> {
         return ctx.newAdapter(this, adapterName);
     }
 
+    @Path(value = "%40{segment}")
+    public AdapterResource disptachAdapter2(@PathParam("segment") String adapterName) {
+        return ctx.newAdapter(this, adapterName);
+    }
+
 }
