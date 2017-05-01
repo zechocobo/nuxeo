@@ -293,23 +293,30 @@ public class LDAPDirectory extends AbstractDirectory {
     }
 
     protected DirContext createContext() throws DirectoryException {
-        try {
-            /*
-             * Dynamic server list requires re-computation on each access
-             */
-            String serverName = getDescriptor().getServerName();
-            if (StringUtils.isEmpty(serverName)) {
-                throw new DirectoryException("server configuration is missing for directory " + getName());
+        DirContext context;
+        if (testServer != null) {
+            context = testServer.getContext();
+        } else {
+            try {
+                /*
+                 * Dynamic server list requires re-computation on each access
+                 */
+                String serverName = getDescriptor().getServerName();
+                if (StringUtils.isEmpty(serverName)) {
+                    throw new DirectoryException("server configuration is missing for directory " + getName());
+                }
+                LDAPServerDescriptor serverConfig = getServer();
+                if (serverConfig.isDynamicServerList()) {
+                    String ldapUrls = serverConfig.getLdapUrls();
+                    contextProperties.put(Context.PROVIDER_URL, ldapUrls);
+                }
+                context = new InitialDirContext(contextProperties);
+            } catch (NamingException e) {
+                throw new DirectoryException("Cannot connect to LDAP directory '" + getName() + "': " + e.getMessage(),
+                        e);
             }
-            LDAPServerDescriptor serverConfig = getServer();
-            if (serverConfig.isDynamicServerList()) {
-                String ldapUrls = serverConfig.getLdapUrls();
-                contextProperties.put(Context.PROVIDER_URL, ldapUrls);
-            }
-            return new InitialDirContext(contextProperties);
-        } catch (NamingException e) {
-            throw new DirectoryException("Cannot connect to LDAP directory '" + getName() + "': " + e.getMessage(), e);
         }
+        return context;
     }
 
     /**
@@ -325,13 +332,7 @@ public class LDAPDirectory extends AbstractDirectory {
         if (schemaFieldMap == null) {
             initLDAPConfig();
         }
-        DirContext context;
-        if (testServer != null) {
-            context = testServer.getContext();
-        } else {
-            context = createContext();
-        }
-        Session session = new LDAPSession(this, context);
+        Session session = new LDAPSession(this);
         addSession(session);
         return session;
     }
