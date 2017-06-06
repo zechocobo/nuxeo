@@ -71,7 +71,7 @@ public class CacheServiceImpl extends DefaultComponent implements CacheService {
             for (CacheDescriptor desc : descriptors.values()) {
                 cacheRegistry.contributionRemoved(desc.name, desc);
                 if (!autoregisteredCacheNames.remove(desc.name)) {
-                    log.warn("Unregistery leaked contribution " + desc.name);
+                    log.warn("Unregister leaked contribution '" + desc.name + "'");
                 }
             }
         }
@@ -92,7 +92,6 @@ public class CacheServiceImpl extends DefaultComponent implements CacheService {
         cacheRegistry.start();
     }
 
-
     @Override
     public void applicationStopped(ComponentContext context, Instant deadline) {
         cacheRegistry.stop();
@@ -107,21 +106,26 @@ public class CacheServiceImpl extends DefaultComponent implements CacheService {
         }
     }
 
+    @Override
+    public void unregisterExtension(Extension extension) throws RuntimeException {
+        Object[] contribs = extension.getContributions();
+        for (Object contrib : contribs) {
+            CacheDescriptor descriptor = (CacheDescriptor) contrib;
+            cacheRegistry.removeContribution(descriptor);
+        }
+    }
+
     public void registerCache(CacheDescriptor descriptor) {
         cacheRegistry.addContribution(descriptor);
     }
 
+    public void unregisterCache(CacheDescriptor descriptor) {
+        cacheRegistry.removeContribution(descriptor);
+    }
+
     @Override
     public void registerCache(String name, int maxSize, int timeout) {
-        CacheDescriptor desc;
-        if (cacheRegistry.caches.get(DEFAULT_CACHE_ID) != null) {
-            desc = new CacheDescriptor(cacheRegistry.caches.get(DEFAULT_CACHE_ID));
-        } else {
-            desc = new CacheDescriptor();
-        }
-        desc.name = name;
-        desc.ttl = timeout;
-        desc.options.put("maxSize", String.valueOf(maxSize));
+        CacheDescriptor desc = getCacheDescriptor(name, maxSize, timeout);
         if (cacheRegistry.caches.get(name) == null) {
             registerCache(desc);
             autoregisteredCacheNames.add(name);
@@ -132,18 +136,24 @@ public class CacheServiceImpl extends DefaultComponent implements CacheService {
     }
 
     @Override
-    public void unregisterExtension(Extension extension) throws RuntimeException {
-        Object[] contribs = extension.getContributions();
-        for (Object contrib : contribs) {
-            CacheDescriptor descriptor = (CacheDescriptor) contrib;
-            cacheRegistry.removeContribution(descriptor);
+    public void unregisterCache(String name, int size, int timeout) {
+        CacheDescriptor desc = getCacheDescriptor(name, size, timeout);
+        unregisterCache(desc);
+        autoregisteredCacheNames.remove(name);
+    }
+
+    protected CacheDescriptor getCacheDescriptor(String name, int size, int timeout) {
+        CacheDescriptor desc;
+        if (cacheRegistry.caches.get(DEFAULT_CACHE_ID) != null) {
+            desc = new CacheDescriptor(cacheRegistry.caches.get(DEFAULT_CACHE_ID));
+        } else {
+            desc = new CacheDescriptor();
         }
+        desc.name = name;
+        desc.ttl = timeout;
+        desc.options.put("maxSize", String.valueOf(size));
+        return desc;
     }
-
-    public void unregisterCache(CacheDescriptor descriptor) {
-        cacheRegistry.removeContribution(descriptor);
-    }
-
 
     @Override
     public <T> T getAdapter(Class<T> adapter) {

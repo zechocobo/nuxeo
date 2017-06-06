@@ -37,4 +37,10 @@ public interface CacheService {
      * @since 8.2
      */
     public void registerCache(String name, int size, int timeout);
+
+    /**
+     * @since 9.2
+     */
+    public void unregisterCache(String name, int size, int timeout);
+
 }
