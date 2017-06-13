@@ -1138,6 +1138,21 @@ SELECT 1 FROM pg_indexes WHERE indexname = 'dublincore_modified_idx';
 CREATE INDEX dublincore_modified_idx ON dublincore USING btree(modified);
 
 
+#IF: ! create_table_dublincore
+#TEST:
+SELECT 1 FROM pg_indexes WHERE indexname = 'dc_contributors_id_pos_idx';
+
+#IF: create_table_dublincore OR: emptyResult
+CREATE UNIQUE INDEX dc_contributors_id_pos_idx ON dc_contributors (id, pos);
+
+#IF: ! create_table_dublincore
+#TEST:
+SELECT 1 FROM pg_indexes WHERE indexname = 'dc_subjects_id_pos_idx';
+
+#IF: create_table_dublincore OR: emptyResult
+CREATE UNIQUE INDEX dc_subjects_id_pos_idx ON dc_subjects (id, pos);
+
+
 #IF: fulltextEnabled
 #IF: ! create_table_fulltext
 #TEST:
