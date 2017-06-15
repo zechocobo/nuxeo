@@ -35,7 +35,8 @@ public interface Table extends Serializable {
         /** Fulltext index, may be on several columns. */
         FULLTEXT,
         /** Non primary index but the main one for this table. */
-        MAIN_NON_PRIMARY
+        MAIN_NON_PRIMARY,
+        UNIQUE
     }
 
     boolean isAlias();
