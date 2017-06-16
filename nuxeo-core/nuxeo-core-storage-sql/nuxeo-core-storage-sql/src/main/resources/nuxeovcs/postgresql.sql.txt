@@ -1153,6 +1153,25 @@ SELECT 1 FROM pg_indexes WHERE indexname = 'dc_subjects_id_pos_idx';
 CREATE UNIQUE INDEX dc_subjects_id_pos_idx ON dc_subjects (id, pos);
 
 
+#TEST:
+SELECT 1 FROM pg_indexes WHERE indexname = 'hierarchy_parentid_name_1_idx';
+
+#IF: emptyResult
+CREATE UNIQUE INDEX hierarchy_parentid_name_1_idx ON hierarchy (parentid, name) WHERE isproperty = 'false';
+
+#TEST:
+SELECT 1 FROM pg_indexes WHERE indexname = 'hierarchy_parentid_name_2_idx';
+
+#IF: emptyResult
+CREATE UNIQUE INDEX hierarchy_parentid_name_2_idx ON hierarchy (parentid, name) WHERE isproperty = true AND pos IS NULL;
+
+#TEST:
+SELECT 1 FROM pg_indexes WHERE indexname = 'hierarchy_parentid_name_3_idx';
+
+#IF: emptyResult
+CREATE UNIQUE INDEX hierarchy_parentid_name_3_idx ON hierarchy (parentid, name, pos) WHERE isproperty = true AND pos IS NOT NULL;
+
+
 #IF: fulltextEnabled
 #IF: ! create_table_fulltext
 #TEST:
