@@ -569,8 +569,8 @@ public abstract class Dialect {
         if (indexType == Table.IndexType.FULLTEXT) {
             return getCreateFulltextIndexSql(indexName, quotedIndexName, table, columns, model);
         } else {
-            return String.format("CREATE %sINDEX %s ON %s (%s)", (indexType == Table.IndexType.UNIQUE) ? "UNIQUE ": "",
-                    quotedIndexName, table.getQuotedName(), String.join(", ", qcols));
+            return String.format("CREATE INDEX %s ON %s (%s)", quotedIndexName, table.getQuotedName(),
+                    String.join(", ", qcols));
         }
     }
 

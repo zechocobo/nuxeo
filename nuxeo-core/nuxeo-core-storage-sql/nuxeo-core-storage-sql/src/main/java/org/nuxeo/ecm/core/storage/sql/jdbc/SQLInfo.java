@@ -772,8 +772,7 @@ public class SQLInfo {
         // maker.postProcessIdGeneration();
 
         maker.table.addIndex(Model.HIER_PARENT_KEY);
-        maker.table.addIndex("hierarchy_parentid_name_idx", IndexType.UNIQUE,
-                Model.HIER_PARENT_KEY, Model.HIER_CHILD_NAME_KEY);
+        maker.table.addIndex(Model.HIER_PARENT_KEY, Model.HIER_CHILD_NAME_KEY);
         // don't index parent+name+isprop, a simple isprop scan will suffice
         maker.table.addIndex(Model.MAIN_PRIMARY_TYPE_KEY);
 
