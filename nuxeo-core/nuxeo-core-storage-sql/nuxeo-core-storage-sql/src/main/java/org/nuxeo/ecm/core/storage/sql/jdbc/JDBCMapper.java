@@ -724,7 +724,12 @@ public class JDBCMapper extends JDBCRowMapper implements Mapper {
         if (queryMaker == null) {
             throw new NuxeoException("No QueryMaker accepts query: " + queryType + ": " + query);
         }
-        query = computeDistinctDocuments(query, distinctDocuments);
+        if (distinctDocuments) {
+            String q = query.toLowerCase();
+            if (q.startsWith("select ") && !q.startsWith("select distinct ")) {
+                query = "SELECT DISTINCT " + query.substring("SELECT ".length());
+            }
+        }
         try {
             return new ResultSetQueryResult(queryMaker, query, queryFilter, pathResolver, this, params);
         } catch (SQLException e) {
@@ -735,7 +740,13 @@ public class JDBCMapper extends JDBCRowMapper implements Mapper {
     @Override
     public PartialList<Map<String, Serializable>> queryProjection(String query, String queryType,
             QueryFilter queryFilter, boolean distinctDocuments, long countUpTo, Object... params) {
-        query = computeDistinctDocuments(query, distinctDocuments);
+        if (distinctDocuments) {
+            String q = query.toLowerCase();
+            if (q.startsWith("select ") && !q.startsWith("select distinct ")) {
+                // Replace "select" by "select distinct", split at "select ".length() index
+                query = "SELECT DISTINCT " + query.substring(7);
+            }
+        }
         PartialList<Map<String, Serializable>> result = queryProjection(query, queryType, queryFilter, countUpTo,
                 (info, rs) -> info.mapMaker.makeMap(rs), params);
 
@@ -744,17 +755,6 @@ public class JDBCMapper extends JDBCRowMapper implements Mapper {
         }
 
         return result;
-    }
-
-    protected String computeDistinctDocuments(String query, boolean distinctDocuments) {
-        if (distinctDocuments) {
-            String q = query.toLowerCase();
-            if (q.startsWith("select ") && !q.startsWith("select distinct ")) {
-                // Replace "select" by "select distinct", split at "select ".length() index
-                query = "SELECT DISTINCT " + query.substring(7);
-            }
-        }
-        return query;
     }
 
     protected <T> PartialList<T> queryProjection(String query, String queryType, QueryFilter queryFilter,
@@ -1406,7 +1406,7 @@ public class JDBCMapper extends JDBCRowMapper implements Mapper {
      * @since 7.10-HF25, 8.10-HF06, 9.2
      */
     @FunctionalInterface
-    protected interface BiFunctionSQLException<T, U, R> {
+    private interface BiFunctionSQLException<T, U, R> {
 
         /**
          * Applies this function to the given arguments.
