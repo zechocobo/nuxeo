@@ -132,6 +132,9 @@ public class DefaultAuditBulker implements AuditBulkerMBean, AuditBulker {
 
     @Override
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
+        if (queue.isEmpty()) {
+            return true;
+        }
         lock.lock();
         try {
             isFilled.signalAll();
@@ -150,6 +153,14 @@ public class DefaultAuditBulker implements AuditBulkerMBean, AuditBulker {
         int delta = entries.size();
         size.addAndGet(-delta);
         drainedCount.inc(delta);
+        if (queue.isEmpty()) {
+            lock.lock();
+            try {
+                isEmpty.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
         return delta;
     }
 
@@ -165,16 +176,19 @@ public class DefaultAuditBulker implements AuditBulkerMBean, AuditBulker {
                     if (queue.isEmpty()) {
                         continue;
                     }
-                    int count = drain();
-                    if (log.isDebugEnabled()) {
-                        log.debug("flushed " + count + " events");
-                    }
                 } catch (InterruptedException cause) {
                     Thread.currentThread().interrupt();
                     return;
                 } finally {
-                    isEmpty.signalAll();
                     lock.unlock();
+                }
+                try {
+                    int count = drain();
+                    if (log.isDebugEnabled()) {
+                        log.debug("flushed " + count + " events");
+                    }
+                } catch (RuntimeException cause) {
+                    log.error("caught error while draining audit queue", cause);
                 }
             }
             log.info("bulk audit logger stopped");
