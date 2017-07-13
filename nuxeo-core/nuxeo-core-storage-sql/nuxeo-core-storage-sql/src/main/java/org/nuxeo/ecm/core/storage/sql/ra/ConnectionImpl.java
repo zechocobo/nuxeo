@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2017 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2011 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  * Contributors:
  *     Florent Guillaume
  */
+
 package org.nuxeo.ecm.core.storage.sql.ra;
 
 import java.io.Serializable;
@@ -362,7 +363,7 @@ public class ConnectionImpl implements Session {
         }
     }
 
-    protected final Set<QueryResultContextException> queryResults = new HashSet<>();
+    protected final Set<QueryResultContextException> queryResults = new HashSet<QueryResultContextException>();
 
     protected void noteQueryResult(IterableQueryResult result) {
         queryResults.add(new QueryResultContextException(result));
@@ -378,8 +379,8 @@ public class ConnectionImpl implements Session {
             } catch (RuntimeException e) {
                 LogFactory.getLog(ConnectionImpl.class).error("Cannot close query result", e);
             } finally {
-                LogFactory.getLog(ConnectionImpl.class)
-                          .warn("Closing a query results for you, check stack trace for allocating point", context);
+                LogFactory.getLog(ConnectionImpl.class).warn(
+                        "Closing a query results for you, check stack trace for allocating point", context);
             }
         }
         queryResults.clear();

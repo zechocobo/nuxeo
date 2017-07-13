@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2017 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2011 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  * Contributors:
  *     Florent Guillaume
  */
+
 package org.nuxeo.ecm.core.storage.sql;
 
 import java.io.Serializable;
@@ -37,8 +38,8 @@ import org.nuxeo.ecm.core.query.QueryFilter;
 public interface Mapper extends RowMapper, XAResource {
 
     /**
-     * Executes the given query and returns the first batch of results, next batch must be requested within the
-     * {@code keepAliveSeconds} delay.
+     * Executes the given query and returns the first batch of results, next batch must be requested
+     * within the {@code keepAliveSeconds} delay.
      *
      * @since 8.4
      */
@@ -54,8 +55,7 @@ public interface Mapper extends RowMapper, XAResource {
     /**
      * Identifiers assigned by a server to identify a client mapper and its repository.
      */
-    final class Identification implements Serializable {
-
+    public static final class Identification implements Serializable {
         private static final long serialVersionUID = 1L;
 
         public final String repositoryId;
@@ -71,7 +71,6 @@ public interface Mapper extends RowMapper, XAResource {
         public String toString() {
             return getClass().getSimpleName() + '(' + repositoryId + ',' + mapperId + ')';
         }
-
     }
 
     /**
@@ -134,7 +133,7 @@ public interface Mapper extends RowMapper, XAResource {
      * Makes a NXQL query to the database.
      *
      * @param query the query
-     * @param queryType the query type
+     * @param query the query type
      * @param queryFilter the query filter
      * @param countTotal if {@code true}, count the total size without limit/offset
      * @return the list of matching document ids
@@ -145,14 +144,14 @@ public interface Mapper extends RowMapper, XAResource {
      * Makes a NXQL query to the database.
      *
      * @param query the query
-     * @param queryType the query type
+     * @param query the query type
      * @param queryFilter the query filter
      * @param countUpTo if {@code -1}, count the total size without offset/limit.<br>
      *            If {@code 0}, don't count the total size.<br>
      *            If {@code n}, count the total number if there are less than n documents otherwise set the size to
      *            {@code -1}.
      * @return the list of matching document ids
-     * @since 5.6
+     * @Since 5.6
      */
     PartialList<Serializable> query(String query, String queryType, QueryFilter queryFilter, long countUpTo);
 
@@ -249,7 +248,7 @@ public interface Mapper extends RowMapper, XAResource {
      * doesn't match, the returned lock will return {@code true} for {@link Lock#getFailed}.
      *
      * @param id the document id
-     * @param owner the owner to check, or {@code null} for no check
+     * @param the owner to check, or {@code null} for no check
      * @param force {@code true} to just do the remove and not return the previous lock
      * @return the previous lock
      */

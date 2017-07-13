@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2017 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2013 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,8 +97,8 @@ public class SessionImpl implements Session, XAResource {
      */
     public static final String COMPAT_REPOSITORY_NAME_KEY = "org.nuxeo.vcs.repository.name.default.compat";
 
-    private static final boolean COMPAT_REPOSITORY_NAME = Boolean.parseBoolean(
-            Framework.getProperty(COMPAT_REPOSITORY_NAME_KEY, "true"));
+    private static final boolean COMPAT_REPOSITORY_NAME = Boolean.parseBoolean(Framework.getProperty(
+            COMPAT_REPOSITORY_NAME_KEY, "true"));
 
     protected final RepositoryImpl repository;
 
@@ -138,8 +138,7 @@ public class SessionImpl implements Session, XAResource {
 
     private static final java.lang.String LOG_MIN_DURATION_KEY = "org.nuxeo.vcs.query.log_min_duration_ms";
 
-    private static final long LOG_MIN_DURATION_NS = Long.parseLong(Framework.getProperty(LOG_MIN_DURATION_KEY, "-1"))
-            * 1000000;
+    private static final long LOG_MIN_DURATION_NS = Long.parseLong(Framework.getProperty(LOG_MIN_DURATION_KEY, "-1")) * 1000000;
 
     public SessionImpl(RepositoryImpl repository, Model model, Mapper mapper) {
         this.repository = repository;
@@ -157,8 +156,8 @@ public class SessionImpl implements Session, XAResource {
         }
         saveTimer = registry.timer(MetricRegistry.name("nuxeo", "repositories", repository.getName(), "saves"));
         queryTimer = registry.timer(MetricRegistry.name("nuxeo", "repositories", repository.getName(), "queries"));
-        aclrUpdateTimer = registry.timer(
-                MetricRegistry.name("nuxeo", "repositories", repository.getName(), "aclr-updates"));
+        aclrUpdateTimer = registry.timer(MetricRegistry.name("nuxeo", "repositories", repository.getName(),
+                "aclr-updates"));
 
         computeRootNode();
     }
@@ -213,9 +212,8 @@ public class SessionImpl implements Session, XAResource {
             return;
         }
         String currentThreadName = Thread.currentThread().getName();
-        String msg = String.format(
-                "Concurrency Error: Session was started in thread %s (%s)" + " but is being used in thread %s (%s)",
-                threadId, threadName, currentThreadId, currentThreadName);
+        String msg = String.format("Concurrency Error: Session was started in thread %s (%s)"
+                + " but is being used in thread %s (%s)", threadId, threadName, currentThreadId, currentThreadName);
         throw new IllegalStateException(msg, threadStack);
     }
 
@@ -384,14 +382,14 @@ public class SessionImpl implements Session, XAResource {
      * @return a list of {@link Work} instances to schedule post-commit.
      */
     protected List<Work> getFulltextWorks() {
-        Set<Serializable> dirtyStrings = new HashSet<>();
-        Set<Serializable> dirtyBinaries = new HashSet<>();
+        Set<Serializable> dirtyStrings = new HashSet<Serializable>();
+        Set<Serializable> dirtyBinaries = new HashSet<Serializable>();
         context.findDirtyDocuments(dirtyStrings, dirtyBinaries);
         if (dirtyStrings.isEmpty() && dirtyBinaries.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Work> works = new LinkedList<>();
+        List<Work> works = new LinkedList<Work>();
         getFulltextSimpleWorks(works, dirtyStrings);
         getFulltextBinariesWorks(works, dirtyBinaries);
         return works;
@@ -427,7 +425,7 @@ public class SessionImpl implements Session, XAResource {
             }
             document.getSimpleProperty(Model.FULLTEXT_JOBID_PROP).setValue(model.idToString(document.getId()));
             FulltextFinder fulltextFinder = new FulltextFinder(fulltextParser, document, this);
-            List<IndexAndText> indexesAndText = new LinkedList<>();
+            List<IndexAndText> indexesAndText = new LinkedList<IndexAndText>();
             for (String indexName : fulltextConfiguration.indexNames) {
                 Set<String> paths;
                 if (fulltextConfiguration.indexesAllSimple.contains(indexName)) {
@@ -456,7 +454,7 @@ public class SessionImpl implements Session, XAResource {
 
         // mark indexing in progress, so that future copies (including versions)
         // will be indexed as well
-        for (Node node : getNodesByIds(new ArrayList<>(dirtyBinaries))) {
+        for (Node node : getNodesByIds(new ArrayList<Serializable>(dirtyBinaries))) {
             if (!model.getFulltextConfiguration().isFulltextIndexable(node.getPrimaryType())) {
                 continue;
             }
@@ -510,7 +508,7 @@ public class SessionImpl implements Session, XAResource {
             if (paths == null) {
                 return "";
             }
-            List<String> strings = new ArrayList<>();
+            List<String> strings = new ArrayList<String>();
 
             for (String path : paths) {
                 ModelProperty pi = session.getModel().getPathPropertyInfo(documentType, mixinTypes, path);
@@ -521,7 +519,7 @@ public class SessionImpl implements Session, XAResource {
                     continue;
                 }
 
-                List<Node> nodes = new ArrayList<>(Collections.singleton(document));
+                List<Node> nodes = new ArrayList<Node>(Collections.singleton(document));
 
                 String[] names = path.split("/");
                 for (int i = 0; i < names.length; i++) {
@@ -532,13 +530,13 @@ public class SessionImpl implements Session, XAResource {
                         if ("*".equals(names[i + 1])) {
                             // traverse complex list
                             i++;
-                            newNodes = new ArrayList<>();
+                            newNodes = new ArrayList<Node>();
                             for (Node node : nodes) {
                                 newNodes.addAll(session.getChildren(node, name, true));
                             }
                         } else {
                             // traverse child
-                            newNodes = new ArrayList<>(nodes.size());
+                            newNodes = new ArrayList<Node>(nodes.size());
                             for (Node node : nodes) {
                                 node = session.getChildNode(node, name, true);
                                 if (node != null) {
@@ -622,7 +620,7 @@ public class SessionImpl implements Session, XAResource {
 
     public List<Node> getNodesByIds(List<Serializable> ids, boolean prefetch) {
         // get hier fragments
-        List<RowId> hierRowIds = new ArrayList<>(ids.size());
+        List<RowId> hierRowIds = new ArrayList<RowId>(ids.size());
         for (Serializable id : ids) {
             hierRowIds.add(new RowId(Model.HIER_TABLE_NAME, id));
         }
@@ -630,8 +628,8 @@ public class SessionImpl implements Session, XAResource {
         List<Fragment> hierFragments = context.getMulti(hierRowIds, false);
 
         // find available paths
-        Map<Serializable, String> paths = new HashMap<>();
-        Set<Serializable> parentIds = new HashSet<>();
+        Map<Serializable, String> paths = new HashMap<Serializable, String>();
+        Set<Serializable> parentIds = new HashSet<Serializable>();
         for (Fragment fragment : hierFragments) {
             Serializable id = fragment.getId();
             PathAndId pathOrId = context.getPathOrMissingParentId((SimpleFragment) fragment, false);
@@ -658,15 +656,15 @@ public class SessionImpl implements Session, XAResource {
         }
 
         // prepare fragment groups to build nodes
-        Map<Serializable, FragmentGroup> fragmentGroups = new HashMap<>(ids.size());
+        Map<Serializable, FragmentGroup> fragmentGroups = new HashMap<Serializable, FragmentGroup>(ids.size());
         for (Fragment fragment : hierFragments) {
             Serializable id = fragment.row.id;
             fragmentGroups.put(id, new FragmentGroup((SimpleFragment) fragment, new FragmentsMap()));
         }
 
         if (prefetch) {
-            List<RowId> bulkRowIds = new ArrayList<>();
-            Set<Serializable> proxyIds = new HashSet<>();
+            List<RowId> bulkRowIds = new ArrayList<RowId>();
+            Set<Serializable> proxyIds = new HashSet<Serializable>();
 
             // get rows to prefetch for hier fragments
             for (Fragment fragment : hierFragments) {
@@ -676,12 +674,12 @@ public class SessionImpl implements Session, XAResource {
             // proxies
 
             // get proxies fragments
-            List<RowId> proxiesRowIds = new ArrayList<>(proxyIds.size());
+            List<RowId> proxiesRowIds = new ArrayList<RowId>(proxyIds.size());
             for (Serializable id : proxyIds) {
                 proxiesRowIds.add(new RowId(Model.PROXY_TABLE_NAME, id));
             }
             List<Fragment> proxiesFragments = context.getMulti(proxiesRowIds, true);
-            Set<Serializable> targetIds = new HashSet<>();
+            Set<Serializable> targetIds = new HashSet<Serializable>();
             for (Fragment fragment : proxiesFragments) {
                 Serializable targetId = ((SimpleFragment) fragment).get(Model.PROXY_TARGET_KEY);
                 targetIds.add(targetId);
@@ -689,7 +687,7 @@ public class SessionImpl implements Session, XAResource {
 
             // get hier fragments for proxies' targets
             targetIds.removeAll(ids); // only those we don't have already
-            hierRowIds = new ArrayList<>(targetIds.size());
+            hierRowIds = new ArrayList<RowId>(targetIds.size());
             for (Serializable id : targetIds) {
                 hierRowIds.add(new RowId(Model.HIER_TABLE_NAME, id));
             }
@@ -713,7 +711,7 @@ public class SessionImpl implements Session, XAResource {
         }
 
         // assemble nodes from the fragment groups
-        List<Node> nodes = new ArrayList<>(ids.size());
+        List<Node> nodes = new ArrayList<Node>(ids.size());
         for (Serializable id : ids) {
             FragmentGroup fragmentGroup = fragmentGroups.get(id);
             // null if deleted/absent
@@ -841,7 +839,7 @@ public class SessionImpl implements Session, XAResource {
         if (model.getDocumentTypeFacets(node.getPrimaryType()).contains(mixin)) {
             return false; // already present in type
         }
-        List<String> list = new ArrayList<>(Arrays.asList(node.getMixinTypes()));
+        List<String> list = new ArrayList<String>(Arrays.asList(node.getMixinTypes()));
         if (list.contains(mixin)) {
             return false; // already present in node
         }
@@ -866,7 +864,7 @@ public class SessionImpl implements Session, XAResource {
 
     @Override
     public boolean removeMixinType(Node node, String mixin) {
-        List<String> list = new ArrayList<>(Arrays.asList(node.getMixinTypes()));
+        List<String> list = new ArrayList<String>(Arrays.asList(node.getMixinTypes()));
         if (!list.remove(mixin)) {
             return false; // not present in node
         }
@@ -1064,7 +1062,7 @@ public class SessionImpl implements Session, XAResource {
     public List<Node> getChildren(Node parent, String name, boolean complexProp) {
         checkLive();
         List<SimpleFragment> fragments = context.getChildren(parent.getId(), name, complexProp);
-        List<Node> nodes = new ArrayList<>(fragments.size());
+        List<Node> nodes = new ArrayList<Node>(fragments.size());
         for (SimpleFragment fragment : fragments) {
             Node node = getNodeById(fragment.getId());
             if (node == null) {
@@ -1192,7 +1190,7 @@ public class SessionImpl implements Session, XAResource {
     public List<Node> getVersions(Serializable versionSeriesId) {
         checkLive();
         List<Serializable> ids = context.getVersionIds(versionSeriesId);
-        List<Node> nodes = new ArrayList<>(ids.size());
+        List<Node> nodes = new ArrayList<Node>(ids.size());
         for (Serializable id : ids) {
             nodes.add(getNodeById(id));
         }
@@ -1219,7 +1217,7 @@ public class SessionImpl implements Session, XAResource {
             ids = context.getSeriesProxyIds(versionSeriesId);
         }
 
-        List<Node> nodes = new LinkedList<>();
+        List<Node> nodes = new LinkedList<Node>();
         for (Serializable id : ids) {
             Node node = getNodeById(id);
             if (node != null || Boolean.TRUE.booleanValue()) { // XXX
@@ -1251,7 +1249,7 @@ public class SessionImpl implements Session, XAResource {
     protected List<Fragment> getHierarchyAndAncestors(Collection<Serializable> ids) {
         Set<Serializable> allIds = mapper.getAncestorsIds(ids);
         allIds.addAll(ids);
-        List<RowId> rowIds = new ArrayList<>(allIds.size());
+        List<RowId> rowIds = new ArrayList<RowId>(allIds.size());
         for (Serializable id : allIds) {
             rowIds.add(new RowId(Model.HIER_TABLE_NAME, id));
         }
