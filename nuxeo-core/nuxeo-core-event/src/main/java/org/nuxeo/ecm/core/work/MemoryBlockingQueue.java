@@ -41,7 +41,7 @@ import org.nuxeo.ecm.core.work.api.WorkQueueMetrics;
  * In addition, this implementation also keeps a set of {@link Work} ids in the queue when the queue elements are
  * {@link WorkHolder}s.
  */
-public class MemoryBlockingQueue extends NuxeoBlockingQueue {
+public class MemoryBlockingQueue extends NuxeoBlockingQueue<MemoryWorkQueuing> {
 
     /**
      * A {@link LinkedBlockingQueue} that blocks on {@link #offer} and prevents starvation deadlocks on reentrant calls.
@@ -145,19 +145,19 @@ public class MemoryBlockingQueue extends NuxeoBlockingQueue {
     }
 
     @Override
-    public void putElement(Runnable r) throws InterruptedException {
+    protected void putElement(Runnable r) throws InterruptedException {
         queue.put(r);
     }
 
     @Override
-    public Runnable pollElement() {
-        Runnable r = queue.poll();
-        return r;
+    protected Runnable pollElement() {
+        return queue.poll();
     }
 
     @Override
-    public Runnable take() throws InterruptedException {
+    protected Runnable takeElement() throws InterruptedException {
         Runnable r = queue.take();
+        // TODO How is this possible ?
         if (anotherWorkIsAlreadyRunning(r)) {
             // reschedule the work so it does not run concurrently
             offer(r);
@@ -168,6 +168,10 @@ public class MemoryBlockingQueue extends NuxeoBlockingQueue {
         return r;
     }
 
+    /**
+     * @deprecated should not happen
+     */
+    @Deprecated
     private boolean anotherWorkIsAlreadyRunning(Runnable r) throws InterruptedException {
         Work work = WorkHolder.getWork(r);
         String id = work.getId();
@@ -178,13 +182,8 @@ public class MemoryBlockingQueue extends NuxeoBlockingQueue {
     }
 
     @Override
-    public Runnable poll(long timeout, TimeUnit unit) throws InterruptedException {
-        long nanos = unit.toNanos(timeout);
-        nanos = awaitActivation(nanos);
-        if (nanos <= 0) {
-            return null;
-        }
-        return queue.poll(nanos, TimeUnit.NANOSECONDS);
+    protected Runnable pollElement(long timeout, TimeUnit unit) throws InterruptedException {
+        return queue.poll(timeout, unit);
     }
 
     synchronized WorkQueueMetrics workSchedule(Work work) {

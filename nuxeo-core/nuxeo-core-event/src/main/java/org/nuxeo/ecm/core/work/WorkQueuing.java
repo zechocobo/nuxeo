@@ -54,7 +54,17 @@ public interface WorkQueuing {
      * Enable/disable this {@code queueId} processing
      * @since 8.3
      */
-    void setActive(String queueId, boolean value);
+    default void setActive(String queueId, boolean value) {
+        NuxeoBlockingQueue queue = getQueue(queueId);
+        queue.setActive(value);
+        // TODO review this listener part, is it really helpful ? we trigger metrics computing for nothing
+        WorkQueueMetrics metrics = queue.metrics();
+        if (value) {
+            getListener().queueActivated(metrics);
+        } else {
+            getListener().queueDeactivated(metrics);
+        }
+    }
 
     /**
      * Gets the blocking queue of work used by the {@link ThreadPoolExecutor}.
@@ -180,7 +190,16 @@ public interface WorkQueuing {
      * @return the number of scheduled work instances in the queue
      * @since 5.8
      */
-    long count(String queueId, State state);
+    default long count(String queueId, State state) {
+        switch (state) {
+        case SCHEDULED:
+            return metrics(queueId).scheduled.longValue();
+        case RUNNING:
+            return metrics(queueId).running.longValue();
+        default:
+            throw new IllegalArgumentException(String.valueOf(state));
+        }
+    }
 
     /**
      * Returns current metrics of queue identified by the {@code queueId}
@@ -195,6 +214,12 @@ public interface WorkQueuing {
      * @since 8.3
      */
     void listen(Listener listener);
+
+    /**
+     * @return the current listener
+     * @since 9.3
+     */
+    Listener getListener();
 
     public interface Listener {
 

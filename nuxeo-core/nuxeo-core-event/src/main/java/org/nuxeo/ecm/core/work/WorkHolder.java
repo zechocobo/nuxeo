@@ -21,6 +21,7 @@ package org.nuxeo.ecm.core.work;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.nuxeo.ecm.core.work.api.Work;
+import org.nuxeo.ecm.core.work.api.Work.State;
 import org.nuxeo.runtime.trackers.concurrent.ThreadEvent;
 
 /**
@@ -54,7 +55,9 @@ public class WorkHolder implements Runnable {
         currentThread.setName(name + ":" + work.getId());
         ThreadEvent.onEnter(this, false).send();
         try {
+            work.setWorkInstanceState(State.RUNNING);
             work.run();
+            work.setWorkInstanceState(State.UNKNOWN);
         } finally {
             currentThread.setName(name);
             ThreadEvent.onLeave(this).send();

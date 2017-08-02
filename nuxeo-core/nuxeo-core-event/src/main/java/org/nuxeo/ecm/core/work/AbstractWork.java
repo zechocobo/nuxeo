@@ -375,13 +375,11 @@ public abstract class AbstractWork implements Work {
             // --- end work
         } catch (Exception e) {
             exc = e;
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else if (e instanceof InterruptedException) {
+            if (isInterrupted(e)) {
                 // restore interrupted status for the thread pool worker
                 Thread.currentThread().interrupt();
             }
-            throw new RuntimeException(e);
+            throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
         } finally {
             WorkSchedulePath.handleReturn();
             try {
@@ -423,7 +421,7 @@ public abstract class AbstractWork implements Work {
     @Override
     public void cleanUp(boolean ok, Exception e) {
         if (!ok) {
-            if (e instanceof InterruptedException) {
+            if (isInterrupted(e)) {
                 log.debug("Suspended work: " + this);
             } else {
                 if (!(e instanceof ConcurrentUpdateException)) {
@@ -446,6 +444,13 @@ public abstract class AbstractWork implements Work {
         } catch (LoginException le) {
             throw new NuxeoException(le);
         }
+    }
+
+    private boolean isInterrupted(Throwable e) {
+        // elasticsearch client wrap the InterruptedException into a IllegalStateException
+        // search if cause is an InterruptedException
+        // TODO review - is there smething about infinite cause ??
+        return e instanceof InterruptedException || isInterrupted(e.getCause());
     }
 
     @Override

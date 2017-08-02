@@ -306,18 +306,6 @@ public class RedisWorkQueuing implements WorkQueuing {
     }
 
     @Override
-    public long count(String queueId, State state) {
-        switch (state) {
-        case SCHEDULED:
-            return metrics(queueId).scheduled.longValue();
-        case RUNNING:
-            return metrics(queueId).running.longValue();
-        default:
-            throw new IllegalArgumentException(String.valueOf(state));
-        }
-    }
-
-    @Override
     public Work find(String workId, State state) {
         if (isWorkInState(workId, state)) {
             return getWork(bytes(workId));
@@ -346,16 +334,6 @@ public class RedisWorkQueuing implements WorkQueuing {
     @Override
     public State getWorkState(String workId) {
         return getWorkStateInfo(workId);
-    }
-
-    @Override
-    public void setActive(String queueId, boolean value) {
-        WorkQueueMetrics metrics = getQueue(queueId).setActive(value);
-        if (value) {
-            listener.queueActivated(metrics);
-        } else {
-            listener.queueDeactivated(metrics);
-        }
     }
 
     /*
@@ -864,6 +842,11 @@ public class RedisWorkQueuing implements WorkQueuing {
     public void listen(Listener listener) {
         this.listener = listener;
 
+    }
+
+    @Override
+    public Listener getListener() {
+        return listener;
     }
 
 }

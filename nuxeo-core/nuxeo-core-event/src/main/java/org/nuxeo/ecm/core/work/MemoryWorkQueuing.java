@@ -153,18 +153,6 @@ public class MemoryWorkQueuing implements WorkQueuing {
     }
 
     @Override
-    public long count(String queueId, State state) {
-        switch (state) {
-        case SCHEDULED:
-            return metrics(queueId).scheduled.longValue();
-        case RUNNING:
-            return metrics(queueId).running.longValue();
-        default:
-            throw new IllegalArgumentException(String.valueOf(state));
-        }
-    }
-
-    @Override
     public synchronized void removeScheduled(String queueId, String workId) {
         final MemoryBlockingQueue queue = getQueue(queueId);
         Work work = queue.lookup(workId);
@@ -176,18 +164,13 @@ public class MemoryWorkQueuing implements WorkQueuing {
     }
 
     @Override
-    public void setActive(String queueId, boolean value) {
-        WorkQueueMetrics metrics = getQueue(queueId).setActive(value);
-        if (value) {
-            listener.queueActivated(metrics);
-        } else {
-            listener.queueDeactivated(metrics);
-        }
+    public void listen(Listener listener) {
+        this.listener = listener;
     }
 
     @Override
-    public void listen(Listener listener) {
-        this.listener = listener;
+    public Listener getListener() {
+        return listener;
     }
 
     @Override

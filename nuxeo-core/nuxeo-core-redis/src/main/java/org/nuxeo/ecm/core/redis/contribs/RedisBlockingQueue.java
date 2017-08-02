@@ -44,7 +44,7 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
  *
  * @since 5.8
  */
-public class RedisBlockingQueue extends NuxeoBlockingQueue {
+public class RedisBlockingQueue extends NuxeoBlockingQueue<RedisWorkQueuing> {
 
     private static final Log log = LogFactory.getLog(RedisBlockingQueue.class);
 
@@ -59,14 +59,12 @@ public class RedisBlockingQueue extends NuxeoBlockingQueue {
 
     private static final int REMOTE_POLL_INTERVAL_STDEV_MS = 200;
 
-    protected final RedisWorkQueuing queuing;
-
     protected final Lock lock = new ReentrantLock();
+
     protected final Condition notEmpty = lock.newCondition();
 
     public RedisBlockingQueue(String queueId, RedisWorkQueuing queuing) {
         super(queueId, queuing);
-        this.queuing = queuing;
     }
 
     @Override
@@ -77,49 +75,6 @@ public class RedisBlockingQueue extends NuxeoBlockingQueue {
     @Override
     public int getQueueSize() {
         return queuing.metrics(queueId).scheduled.intValue();
-    }
-
-    @Override
-    public Runnable take() throws InterruptedException {
-        for (; ; ) {
-            Runnable r = poll(1, TimeUnit.DAYS);
-            if (r != null) {
-                return r;
-            }
-        }
-    }
-
-    @Override
-    public Runnable poll(long timeout, TimeUnit unit) throws InterruptedException {
-        long nanos = unit.toNanos(timeout);
-        nanos = awaitActivation(nanos);
-        if (nanos <= 0) {
-            return null;
-        }
-        long end = System.currentTimeMillis() + TimeUnit.NANOSECONDS.toMillis(nanos);
-        for (; ; ) {
-            Runnable r = poll();
-            if (r != null) {
-                return r;
-            }
-            if (timeUntil(end) == 0) {
-                return null;
-            }
-            lock.lock();
-            try {
-                // wake up if our instance has submitted a new job or wait
-                notEmpty.await(getRemotePollInterval(), TimeUnit.MILLISECONDS);
-            } finally {
-                lock.unlock();
-            }
-
-        }
-    }
-
-    private int getRemotePollInterval() {
-        // add some randomness so we don't generate periodic spike when all workers are starving
-        return REMOTE_POLL_INTERVAL_MS + ThreadLocalRandom.current().nextInt(-1 * REMOTE_POLL_INTERVAL_STDEV_MS,
-                REMOTE_POLL_INTERVAL_STDEV_MS);
     }
 
     @Override
@@ -163,6 +118,32 @@ public class RedisBlockingQueue extends NuxeoBlockingQueue {
             // for connection errors make poll return no result
             return null;
         }
+    }
+
+    @Override
+    protected Runnable pollElement(long timeout, TimeUnit unit) throws InterruptedException {
+        long end = System.currentTimeMillis() + unit.toMillis(timeout);
+        while (timeUntil(end) > 0) {
+            Runnable runnable = pollElement();
+            if (runnable != null) {
+                return runnable;
+            }
+            // here we just add the notEmpty await
+            lock.lock();
+            try {
+                // wake up if our instance has submitted a new job or wait
+                notEmpty.await(getRemotePollInterval(), TimeUnit.MILLISECONDS);
+            } finally {
+                lock.unlock();
+            }
+        }
+        return null;
+    }
+
+    private int getRemotePollInterval() {
+        // add some randomness so we don't generate periodic spike when all workers are starving
+        return REMOTE_POLL_INTERVAL_MS + ThreadLocalRandom.current().nextInt(-1 * REMOTE_POLL_INTERVAL_STDEV_MS,
+                REMOTE_POLL_INTERVAL_STDEV_MS);
     }
 
     protected static boolean delayExpired(AtomicLong atomic) {

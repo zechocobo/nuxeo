@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -561,12 +560,16 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
 
         /**
          * List of running Work instances, in order to be able to interrupt them if requested.
+         *
+         * @deprecated running element are stored in queuing no need to have it here
          */
         // @GuardedBy("itself")
+        @Deprecated
         protected final ConcurrentLinkedQueue<Work> running;
 
         // metrics, in cluster mode these counters must be aggregated, no logic should rely on them
         // Number of work scheduled by this instance
+        // TODO Doesn't seem to be incremented
         protected final Counter scheduledCount;
 
         // Number of work currently running on this instance
@@ -624,35 +627,61 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
         @Override
         protected void beforeExecute(Thread t, Runnable r) {
             Work work = WorkHolder.getWork(r);
+            // here work is out of the queue but not running
+            // in case of interruption (shutdown) we have several options
+            // - suspend the work and rely on work queue to stop giving new task
+            // our queue doesn't give new task if their disabled, also drainTo/toArray methods were disabled to preserve
+            // the queue state during shutdownNow. If we're here, that means queue was activated just before
+            // - (current way on master) reschedule the work and throw an exception to "kill" the worker, want to speed
+            // up stop and reschedule work shouldn't be an error
+            // - probably not needed now as queue seems to handle correctly the shutdown -> we shouldn't obtain a task
+            // when interrupting (the only case to handle is the running work interrupted)
             if (isShutdown()) {
-                work.setWorkInstanceState(State.SCHEDULED);
-                queuing.workReschedule(queueId, work);
-                throw new RejectedExecutionException(queueId + " was shutdown, rescheduled " + work);
+                work.setWorkInstanceSuspending();
+            } else {
+                queuing.workRunning(queueId, work);
             }
-            work.setWorkInstanceState(State.RUNNING);
-            queuing.workRunning(queueId, work);
-            running.add(work);
             runningCount.inc();
+
+//            if (isShutdown() && false) {
+//                work.setWorkInstanceState(State.SCHEDULED);
+//                queuing.workReschedule(queueId, work);
+//                throw new RejectedExecutionException(queueId + " was shutdown, rescheduled " + work);
+//            }
         }
 
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
             Work work = WorkHolder.getWork(r);
             try {
-                if (work.isSuspending()) {
-                    log.trace(work + " is suspending, giving up");
-                    return;
-                }
                 if (isShutdown()) {
-                    log.trace("rescheduling " + work.getId(), t);
+                    if (log.isTraceEnabled()) {
+                        log.trace(String.format("Rescheduling Work(id=%s, state=%s)", work.getId(),
+                                work.getWorkInstanceState()), t);
+                    }
+                    // ensure the SCHEDULED state
                     work.setWorkInstanceState(State.SCHEDULED);
+                    // TODO executed with the same thread than the Worker/Work so probably interrupted
                     queuing.workReschedule(queueId, work);
-                    return;
+                } else {
+                    queuing.workCompleted(queueId, work);
                 }
-                work.setWorkInstanceState(State.UNKNOWN);
-                queuing.workCompleted(queueId, work);
+
+
+//                if (work.isSuspending()) {
+//                    log.trace(work + " is suspending, giving up");
+//                    return;
+//                }
+//                if (isShutdown()) {
+//                    log.trace("rescheduling " + work.getId(), t);
+//                    work.setWorkInstanceState(State.SCHEDULED);
+//                    queuing.workReschedule(queueId, work);
+//                    return;
+//                }
+//                work.setWorkInstanceState(State.UNKNOWN);
+//                queuing.workCompleted(queueId, work);
             } finally {
-                running.remove(work);
+//                running.remove(work);
                 runningCount.dec();
                 completedCount.inc();
                 workTimer.update(work.getCompletionTime() - work.getStartTime(), TimeUnit.MILLISECONDS);
@@ -667,16 +696,21 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
          */
         public void shutdownAndSuspend() throws InterruptedException {
             try {
+                // first flag this executor as shutdown, then suspend running work
+//                shutdown();
                 // don't consume the queue anymore
                 deactivateQueueMetrics(queueId);
                 queuing.setActive(queueId, false);
                 // suspend all running work
-                for (Work work : running) {
-                    work.setWorkInstanceSuspending();
-                    log.trace("suspending and rescheduling " + work.getId());
-                    work.setWorkInstanceState(State.SCHEDULED);
-                    queuing.workReschedule(queueId, work);
-                }
+                // ThreadPoolExecutor will shutdown threads
+                // running task goes on running, pool will then call after execute, depending on error or success, we
+                // will be able to reschedule work
+//                for (Work work : running) {
+//                    work.setWorkInstanceSuspending();
+//                    log.trace("suspending and rescheduling " + work.getId());
+//                    work.setWorkInstanceState(State.SCHEDULED);
+//                    queuing.workReschedule(queueId, work);
+//                }
                 shutdownNow();
             } finally {
                 executors.remove(queueId);
