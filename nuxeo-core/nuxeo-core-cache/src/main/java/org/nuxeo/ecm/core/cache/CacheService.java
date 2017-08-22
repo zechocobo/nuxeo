@@ -27,13 +27,20 @@ package org.nuxeo.ecm.core.cache;
  */
 public interface CacheService {
 
-    public static final String CACHE_TOPIC = "cache-topic";
-
-    public static final String INVALIDATE_ALL = "invalidateAll";
-
+    /**
+     * Gets the cache with the given name.
+     *
+     * @param name the cache name
+     * @return the cache, or {@code null} if it does not exist
+     */
     public Cache getCache(String name);
 
     /**
+     * Programmatically registers a cache with the given characteristics.
+     *
+     * @param name the cache name
+     * @param size the maximum number of elements
+     * @param timeout the entry timeout (in minutes)
      * @since 8.2
      */
     public void registerCache(String name, int size, int timeout);

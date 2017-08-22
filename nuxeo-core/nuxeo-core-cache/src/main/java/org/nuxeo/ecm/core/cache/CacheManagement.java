@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2014 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2017 Nuxeo(http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,41 +14,34 @@
  * limitations under the License.
  *
  * Contributors:
- *     Maxime Hilaire
- *
+ *     Florent Guillaume
  */
 package org.nuxeo.ecm.core.cache;
 
-
 /**
- * Abstract class to be extended to provide new cache implementation
+ * Management-related APIs for a {@link Cache}.
  *
- * @since 6.0
+ * @since 9.3
  */
-public abstract class AbstractCache implements CacheManagement {
+public interface CacheManagement extends Cache {
 
-    protected final String name;
+    /**
+     * Starts this cache.
+     */
+    void start();
 
-    public final long ttl;
+    /**
+     * Stops this cache and releases related resources.
+     */
+    void stop();
 
-    protected AbstractCache(CacheDescriptor desc) {
-        name = desc.name;
-        ttl = desc.getTTL();
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public void start() {
-        // nothing
-    }
-
-    @Override
-    public void stop() {
-        // nothing
-    }
+    /**
+     * Returns this cache size (approximate number of entries), or {@code -1} if the number of entries is unknown or too
+     * expensive to compute.
+     *
+     * @return the approximate number of entries, or {@code -1}
+     * @since 9.1
+     */
+    long getSize();
 
 }
